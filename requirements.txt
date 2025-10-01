@@ -1,0 +1,7 @@
+# python 3.11.7
+py-irt
+jsonlines
+matplotlib
+datasets # for downloading data
+torchvision # for MLP
+umap-learn # for pca

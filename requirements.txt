@@ -1,7 +1,7 @@
-# python 3.11.7
-py-irt
-jsonlines
-matplotlib
-datasets # for downloading data
-torchvision # for MLP
-umap-learn # for pca
+# mkdir -p envs && conda create --prefix ./envs/disco_env python==3.11.7
+stnd @ git+https://github.com/arubique/stnd.git@2fcdb2a0efd5f7ffef606a200e83b07e6f9cd18d
+ipython==9.6.0
+matplotlib==3.10.1
+scipy==1.15.2
+tqdm==4.67.1
+# torch==2.7.0

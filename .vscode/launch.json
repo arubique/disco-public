@@ -1,0 +1,19 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Plot Tables",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "./scripts/plot_tables.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--source_config_path",
+                "./configs/result_paths/pds_results_suffixes.json"
+            ]
+        },
+    ]
+}

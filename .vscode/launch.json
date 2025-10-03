@@ -15,5 +15,88 @@
                 "./configs/result_paths/pds_results_suffixes.json"
             ]
         },
+        {
+            "name": "Run Experiment",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "run_experiment.py",
+            "args": [
+                // "--subsample_validation",
+                "--disagreement_type",
+                // "jsd",
+                "pds",
+                "--bench",
+                // "mmlu",
+                "mmlu_fields",
+                // "helm_lite",
+                // "alpaca",
+                // "arc",
+                // "winogrande",
+                // "truthfulqa",
+                // "hellaswag",
+                "--split",
+                "iid",
+                // "noniid",
+                "--iterations",
+                "2",
+                // "--text_to_vector",
+                // "bow",
+                // "bge",
+                // "5",
+                "--device",
+                "cuda",
+                // "--skip_irt",
+                // "--cache_path",
+                // "cache/mmlu_fields_iid_5_cuda_02052025.pickle",
+                // "cache/helm_lite_29072025.pickle",
+                // "cache/alpaca_v2_29072025.pickle",
+                // "cache/debug_truthful.pickle",
+                // "cache/debug_hellaswag.pickle",
+                // "cache/mmlu_fields_iid_5_cuda_03052025_gsheet.pickle",
+                "--num_workers",
+                "4",
+                "--sampling_names",
+                "random,high-disagreement,low-disagreement,low-disagreement@2,high-disagreement@2,low-disagreement@10,high-disagreement@10,low-disagreement@100,high-disagreement@100",
+                // "random,high-disagreement+nonstratified",
+                // "random,high-disagreement+stratified",
+                // "random,high-disagreement",
+                "--filename_suffix",
+                "_disagreement_debug_subsample_validation",
+                // "_reproduced"
+                "--pca",
+                "128",
+                "--make_results_table",
+                "--estimators",
+                // "Ridge_10,MLP2_e200_lr0.001"
+                // "best",
+                // "GradientBoostingRegressor_200",
+                "KNN",
+                "--number_items",
+                "100",
+                // "--n_source_models",
+                // "3",
+                // "mlp"
+                // "MLP3_e200_lr0.001__COMMA__MLP3_e300_lr0.001__COMMA__MLP3_e400_lr0.001__COMMA__MLP3_e200_lr0.0001__COMMA__MLP3_e500_lr0.001__COMMA__MLP3_e500_lr0.0001__COMMA__MLP3_e600_lr0.001"
+            ],
+            "console": "integratedTerminal",
+        },
+        {
+            "name": "Download Leaderboard",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "scripts/download_leaderboard.py",
+            "args": [
+                "--lb_type",
+                // "mmlu_fields",
+                "openllm_leaderboard",
+                // "helm_lite",
+                // "mmlu_fields",
+                "--lb_savepath",
+                // "data/leaderboard_fields_raw_22042025.pickle"
+                // "./data/leaderboard_raw_25042025.pickle"
+                "None"
+            ],
+            "console": "integratedTerminal"
+        }
     ]
 }

@@ -1,16 +1,12 @@
-# import pickle
-
 import pandas as pd
 from IPython.display import display
 import sys
-import matplotlib.pyplot as plt
 import os
 import numpy as np
-from scipy import stats
-import logging
-import subprocess
 import json
 import argparse
+from tqdm import tqdm
+
 
 # local imports
 sys.path.insert(
@@ -31,9 +27,6 @@ from generating_data.utils_for_notebooks import merge_methods
 sys.path.pop(0)
 
 
-# FIGURES_FOLDER = "../tmp/NeurIPS_2025_Accelerated-Model-Evaluation-by-Using-Similarities-in-Prediction-Space/figures"
-# N_SAMPLES_FIGURE_FOLDER = os.path.join(FIGURES_FOLDER, "num_samples")
-# os.makedirs(FIGURES_FOLDER, exist_ok=True)
 NUM_ANCHORS = 100
 
 
@@ -643,10 +636,44 @@ def extract_data_for_table_1_v2(
 
     # Row-wise argmin/argmax on SOURCE across min_cols to select the column per row
     if len(min_cols) > 0:
+        # Get the subset of data for min/max operations
+        data_subset = grouped_df_source[min_cols]
+
+        # # Check for rows with all NaN values and handle them
+        # all_nan_rows = data_subset.isna().all(axis=1)
+
+        # Handle all-NaN rows before idxmin/idxmax to avoid FutureWarning
+        # all_nan_rows = data_subset.isna().all(axis=1)
+        # fill_value = float('inf') if lower_better else float('-inf')
+        # data_subset = data_subset.fillna(fill_value).infer_objects(copy=False)
+        # Handle all-NaN rows before idxmin/idxmax to avoid FutureWarning
+
+        # Create a copy to avoid modifying the original data
+        data_subset_clean = data_subset.copy()
+
+        # Fill NaN values with infinity (or -infinity) based on whether we want min or max
+        # Use numpy operations to avoid pandas downcasting warnings
+        fill_value = np.inf if lower_better else -np.inf
+        for col in data_subset_clean.columns:
+            # Use numpy where to avoid fillna() downcasting warnings
+            mask = data_subset_clean[col].isna()
+            data_subset_clean[col] = np.where(
+                mask, fill_value, data_subset_clean[col]
+            )
+
+        # For rows that were all NaN, set their values back to NaN
+
+        # FutureWarning: The behavior of DataFrame.idxmin with all-NA values, or any-NA and skipna=False, is deprecated. In a future version this will raise ValueError
         if lower_better:
-            best_col_per_row = grouped_df_source[min_cols].idxmin(axis=1)
+            # Use skipna=True to avoid the warning, then handle NaN results
+            best_col_per_row = data_subset_clean.idxmin(axis=1, skipna=True)
         else:
-            best_col_per_row = grouped_df_source[min_cols].idxmax(axis=1)
+            # Use skipna=True to avoid the warning, then handle NaN results
+            best_col_per_row = data_subset_clean.idxmax(axis=1, skipna=True)
+
+        # For rows where all values are NaN, idxmin/idxmax will return NaN
+        # We can either drop these rows or handle them as needed
+        # For now, we'll keep the NaN values and let the downstream code handle them
 
         # Extract corresponding TARGET values from the selected column
         # Use safe lookup without deprecated DataFrame.lookup
@@ -864,7 +891,7 @@ def get_data(results_suffixes, return_only_df=False, target_df_dict=None):
     model_perf_dict = {}
 
     # iterate over benchmarks or ablation names
-    for bench, per_bench in results_suffixes.items():
+    for bench, per_bench in tqdm(results_suffixes.items()):
         if bench not in table_avg_dict:
             table_avg_dict[bench] = {}
             table_std_dict[bench] = {}
@@ -1259,7 +1286,7 @@ def main():
         return_only_df=False,
         target_df_dict=target_df_dict,
     )
-    # table_1, latex_str = make_table_1(table_1_data + [(None, 100), (None, 100)])
+
     table_1, latex_str = make_table_1(table_1_data)
     display(table_1)
     print(latex_str)

@@ -12,4 +12,5 @@ typer==0.9.4 # needed for operationable py-irt
 click==8.1.8 # needed for operationable py-irt
 py-irt==0.6.5
 datasets==4.0.0
+gdown==4.6.0 # for newer versions of gdown get "too many requests" error
 # torch==2.7.0

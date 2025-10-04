@@ -6,8 +6,10 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import stats
+from scipy.stats import ConstantInputWarning
 import matplotlib.pyplot as plt
 import os
+import warnings
 
 # from experiments import *
 # from utils import *
@@ -21,6 +23,32 @@ from utils import (
     prepare_data,
     create_responses,
 )
+
+
+warnings.filterwarnings("error", category=FutureWarning)
+warnings.filterwarnings("error", category=ConstantInputWarning)
+
+
+STD_EPS = 1e-9
+
+
+def safe_spearmanr(x_data, y_data):
+    """
+    Compute Spearman correlation with safe handling of constant arrays.
+
+    Args:
+        x_data: First array for correlation
+        y_data: Second array for correlation
+
+    Returns:
+        float: Spearman correlation coefficient, or np.nan if either array is constant
+    """
+    # Check if either array is constant (all values are the same)
+    if np.std(x_data) < STD_EPS or np.std(y_data) < STD_EPS:
+        return np.nan  # or 0, depending on your preference
+    else:
+        return stats.spearmanr(x_data, y_data).statistic
+
 
 RESULTS_FOLDER = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "results"
@@ -586,10 +614,10 @@ def make_table_avg(
                     for j in range(rank_corrs.shape[1]):
                         for l in range(rank_corrs.shape[2]):
                             # print(winrate(data, axis=2).mean(axis=3).shape)
-                            rank_corrs[i, j, l] = stats.spearmanr(
+                            rank_corrs[i, j, l] = safe_spearmanr(
                                 winrate(data, axis=2).mean(axis=3)[i, j, :, l],
                                 winrate(scores.T, axis=0).mean(axis=1),
-                            ).statistic
+                            )
                 data = rank_corrs
 
             else:
@@ -618,10 +646,10 @@ def make_table_avg(
                     for j in range(rank_corrs.shape[1]):
                         for l in range(rank_corrs.shape[2]):
                             # print(data.mean(axis=3).shape)
-                            rank_corrs[i, j, l] = stats.spearmanr(
+                            rank_corrs[i, j, l] = safe_spearmanr(
                                 data.mean(axis=3)[i, j, :, l],
                                 scores.T.mean(axis=1),
-                            ).statistic
+                            )
                 data = rank_corrs
             else:
                 raise NotImplementedError
@@ -634,9 +662,9 @@ def make_table_avg(
                 for j in range(rank_corrs.shape[1]):
                     for k in range(rank_corrs.shape[2]):
                         for l in range(rank_corrs.shape[3]):
-                            rank_corrs[i, j, k, l] = stats.spearmanr(
+                            rank_corrs[i, j, k, l] = safe_spearmanr(
                                 data[i, j, :, k, l], scores.T[:, k]
-                            ).statistic
+                            )
             data = rank_corrs
         else:
             raise NotImplementedError

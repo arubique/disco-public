@@ -11,7 +11,7 @@ import json
 import sys
 
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__)))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__))))
 # from utils import dict_to_h5
 from utils import dump_pickle
 

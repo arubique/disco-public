@@ -8,6 +8,14 @@ import os
 import argparse
 import requests
 import json
+import sys
+
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__)))
+# from utils import dict_to_h5
+from utils import dump_pickle
+
+sys.path.pop(0)
 
 CACHE_DIR = "./cache_dir"
 
@@ -149,6 +157,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--lb_type", type=str, default="mmlu_fields")
     parser.add_argument("--lb_savepath", type=str, default=LB_SAVEPATH)
+    parser.add_argument("--save_only_once", action="store_true")
     args = parser.parse_args()
 
     lb_savepath = args.lb_savepath
@@ -271,10 +280,16 @@ def main():
         if skipped_aux > 0:
             skipped += 1
 
-        with open(lb_savepath, "wb") as handle:
-            pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        if not args.save_only_once:
+            dump_pickle(data, lb_savepath)
+
+        # dict_to_h5(data, lb_savepath)
 
         print("\nModels skipped so far: {:}\n".format(skipped))
+
+    # dict_to_h5(data, lb_savepath)
+    if args.save_only_once:
+        dump_pickle(data, lb_savepath)
 
 
 def skip_model(data, model, scenario_name, skipped_aux, log):

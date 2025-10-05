@@ -22,3 +22,4 @@ results/samples_mmlu_fields_iterations-5.pickle
 df_100.csv
 disagreement_scores_per_strata
 default_df_run_experiment.csv
+*.lock

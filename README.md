@@ -81,7 +81,7 @@ Make sure that file `data/model_outputs.pickle` exists (see ["Download model out
 To train and evaluate the models run the command below (to better understand the structure of this command see ["Note about stnd.run_from_csv.py and .csv files"](#note-about-stndrun_from_csvpy-and-csv-files)):
 
 ```
-export ROOT=./ && export ENV=$ROOT/envs/disco_env && export PROJECT_ROOT_PROVIDED_FOR_STUNED=$ROOT && conda activate $ENV && python -m stnd.run_from_csv --conda_env $ENV --csv_path $ROOT/sheets/train_eval.csv --run_locally --n_groups 1
+export ROOT=. && export ENV=$ROOT/envs/disco_env && export PROJECT_ROOT_PROVIDED_FOR_STUNED=$ROOT && conda activate $ENV && python -m stnd.run_from_csv --conda_env $ENV --csv_path $ROOT/sheets/train_eval.csv --run_locally --n_groups 1
 ```
 
 Upon a successful scripts completion `sheets/train_eval.csv` will look like `sheets/train_eval_filled.csv` and will be ready for the steps described in [Reproduce results from the paper](#reproduce-results-from-the-paper).

@@ -360,8 +360,12 @@ def evaluate_scenarios(
         else:
             cache_key = None
 
-        disagreement_scores_cache_path = make_cache_subpath(
-            cache, scenario_name, split_number, f"disagreement_scores_path"
+        disagreement_scores_cache_path = (
+            make_cache_subpath(
+                cache, scenario_name, split_number, f"disagreement_scores_path"
+            )
+            if cache_key is not None
+            else None
         )
         disagreement_scores_dict = make_or_load_from_cache(
             object_name="disagreement_scores_dict",
@@ -495,8 +499,12 @@ def evaluate_scenarios(
             train_model_indices,  # they are not the global indices, but the contiguous indices of train models after removing test models
         )
 
-        emb_cache_path = make_cache_subpath(
-            cache, scenario_name, split_number, f"embeddings_path"
+        emb_cache_path = (
+            make_cache_subpath(
+                cache, scenario_name, split_number, f"embeddings_path"
+            )
+            if cache_key is not None
+            else None
         )
 
         (
@@ -519,8 +527,12 @@ def evaluate_scenarios(
             cache_path=emb_cache_path,
         )
 
-        fitted_weights_cache_path = make_cache_subpath(
-            cache, scenario_name, split_number, f"fitted_weights_path"
+        fitted_weights_cache_path = (
+            make_cache_subpath(
+                cache, scenario_name, split_number, f"fitted_weights_path"
+            )
+            if cache_key is not None
+            else None
         )
 
         fitted_weights = make_or_load_from_cache(

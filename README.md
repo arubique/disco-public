@@ -67,7 +67,7 @@ python ./scripts/download_leaderboard.py --lb_type openllm_leaderboard --lb_save
 python ./scripts/download_leaderboard.py --lb_type mmlu_fields --lb_savepath ./data/lb_raw.pickle
 ```
 ```
-python scripts/extract_model_outputs.py
+python scripts/extract_model_outputs_from_raw_data.py
 ```
 
 Those commands will generate the file `data/model_outputs.pickle`.

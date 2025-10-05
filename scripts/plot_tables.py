@@ -22,7 +22,7 @@ from plots import (
     make_perf_table,
 )
 from utils import load_pickle
-from generating_data.utils_for_notebooks import merge_methods
+from utils_for_notebooks import merge_methods
 
 sys.path.pop(0)
 

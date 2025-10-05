@@ -44,7 +44,7 @@ from acc import (
     BEST_FITTING_METHODS,
     MLP_FITTING_METHODS,
 )
-from generating_data.utils_for_notebooks import merge_methods
+from utils_for_notebooks import merge_methods
 from stnd.utility.utils import apply_random_seed
 from stnd.utility.imports import make_from_class_ctor
 import json

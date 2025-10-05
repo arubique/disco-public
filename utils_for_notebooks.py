@@ -59,11 +59,15 @@ def parse_df_with_results(
     sub_to_skip=SUB_TO_SKIP,
     max_num_answers=MAX_NUM_ANSWERS,
     keys_to_add=KEYS_TO_ADD,
+    max_models=None,
 ):
     if order is None:
         models = models
     else:
         models = [models[o] for o in order]
+
+    if max_models is not None:
+        models = models[:max_models]
 
     data = {}
     data["data"] = {}

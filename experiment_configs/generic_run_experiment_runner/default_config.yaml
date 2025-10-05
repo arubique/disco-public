@@ -1,0 +1,12 @@
+params:
+  random_seed: 42
+is_python: True
+
+exec_path: <p>
+conda_env: <p>
+
+
+logging:
+  gdrive_storage_folder: null
+  use_wandb: False
+  use_tb: False

@@ -57,14 +57,13 @@ python scripts/download_model_outputs.py
 
 This script will download the file `data/model_outputs.pickle`.
 
-If instead of downloading this file you want to generate it from scratch using data from open-llm-leaderboard, run these commands:
+If instead of downloading this file you want to generate it from scratch using data from open-llm-leaderboard, run the commands below.
 
 ```
-# takes ~ 10 hours
 python ./scripts/download_leaderboard.py --lb_type openllm_leaderboard --lb_savepath ./data/lb_raw_extended.pickle
 ```
+
 ```
-# takes ~ 1 hour
 python ./scripts/download_leaderboard.py --lb_type mmlu_fields --lb_savepath ./data/lb_raw.pickle
 ```
 ```

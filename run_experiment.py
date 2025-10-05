@@ -24,6 +24,7 @@ from utils import (
     helm_lite_scenarios,
 )
 from plots import (
+    MODEL_OUTPUTS_PATH,
     DATA_FOLDER,
     MAX_TABLE_SIZE,
     winrate,
@@ -285,11 +286,10 @@ def get_data(
         "arc",
         "hellaswag",
     ]:
-        mmlu_fields_path = f"{DATA_FOLDER}/mmlu_fields_ordered.pickle"  # ordered by date in ./generate_plots.ipynb
-        # mmlu_fields_path = 'data/mmlu_fields.pickle'
+        model_outputs_path = MODEL_OUTPUTS_PATH
 
         # data
-        with open(mmlu_fields_path, "rb") as handle:
+        with open(model_outputs_path, "rb") as handle:
             data = pickle.load(handle)
 
         scenario_key = "mmlu" if bench == "mmlu_fields" else bench

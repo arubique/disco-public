@@ -54,6 +54,7 @@ RESULTS_FOLDER = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "results"
 )
 DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
+MODEL_OUTPUTS_PATH = os.path.join(DATA_FOLDER, "model_outputs.pkl")
 
 
 MAX_TABLE_SIZE = 1000
@@ -423,10 +424,8 @@ def load_scores(
             "arc",
             "winogrande",
         ]:
-            pkl_base_name = "mmlu_fields"
-            if ordered:
-                pkl_base_name = f"{pkl_base_name}_ordered"
-            data2_path = f"{DATA_FOLDER}/{pkl_base_name}.pickle"
+            assert ordered, "model outputs must be ordered by time"
+            data2_path = MODEL_OUTPUTS_PATH
             with open(data2_path, "rb") as handle:
                 data2 = pickle.load(handle)
         else:

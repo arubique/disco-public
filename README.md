@@ -1,8 +1,8 @@
 # DISCO: Diversifying Sample Condensation for Accelerating Model Evaluation
 
-![DISCO: Diversifying Sample Condensation
-for Accelerating Model Evaluation](./figures/teaser.png "DISCO: Diversifying Sample Condensation
-for Accelerating Model Evaluation")
+<div align="center">
+  <img src="./figures/teaser.png" alt="DISCO: Diversifying Sample Condensation for Accelerating Model Evaluation" title="DISCO: Diversifying Sample Condensation for Accelerating Model Evaluation" />
+</div>
 
 ## Overview
 
@@ -60,9 +60,11 @@ This script will download the file `data/model_outputs.pickle`.
 If instead of downloading this file you want to generate it from scratch using data from open-llm-leaderboard, run these commands:
 
 ```
+# takes ~ 10 hours
 python ./scripts/download_leaderboard.py --lb_type openllm_leaderboard --lb_savepath ./data/lb_raw_extended.pickle
 ```
 ```
+# takes ~ 1 hour
 python ./scripts/download_leaderboard.py --lb_type mmlu_fields --lb_savepath ./data/lb_raw.pickle
 ```
 ```

@@ -83,6 +83,7 @@ def estimate_ability_parameters(
     theta_init=None,
     eps=1e-10,
     optimizer="BFGS",
+    save_timing=False,
 ):
     """
     Estimates the ability parameters for a new set of test responses.
@@ -128,7 +129,10 @@ def estimate_ability_parameters(
     ]
     end_time = time.time()
     elapsed_time = end_time - start_time
-    with open("results/estimate_ability_parameters_timing.txt", "a") as file:
-        file.write(f"{D} {len(seen_items)} {elapsed_time}\n")
+    if save_timing:
+        with open(
+            "results/estimate_ability_parameters_timing.txt", "a"
+        ) as file:
+            file.write(f"{D} {len(seen_items)} {elapsed_time}\n")
 
     return optimal_theta

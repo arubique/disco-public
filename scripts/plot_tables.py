@@ -59,50 +59,53 @@ def make_table_1(data_for_table_1):
         debug = False
 
     rows = []
-    # [DUPLICATION]
-    # [BENCHMARK]
+
+    # Extract data using a more maintainable approach
+    benchmark_names = ["mmlu", "hellaswag", "winogrande", "arc"]
+    data_types = ["maes", "ranks"]
+
+    # Initialize data storage
+    benchmark_data = {}
+    num_anchors_list = []
+
+    # Extract MMLU data (always present)
     mmlu_maes, num_anchors_mmlu_maes = data_for_table_1[0]
     mmlu_ranks, num_anchors_mmlu_ranks = data_for_table_1[1]
+    benchmark_data["mmlu"] = {"maes": mmlu_maes, "ranks": mmlu_ranks}
+    num_anchors_list.extend([num_anchors_mmlu_maes, num_anchors_mmlu_ranks])
     num_anchors = num_anchors_mmlu_maes
-    if not debug:
-        hellaswag_maes, num_anchors_hellaswag_maes = data_for_table_1[2]
-        hellaswag_ranks, num_anchors_hellaswag_ranks = data_for_table_1[3]
-        winogrande_maes, num_anchors_winogrande_maes = data_for_table_1[4]
-        winogrande_ranks, num_anchors_winogrande_ranks = data_for_table_1[5]
-        arc_maes, num_anchors_arc_maes = data_for_table_1[6]
-        arc_ranks, num_anchors_arc_ranks = data_for_table_1[7]
-        assert (
-            num_anchors_mmlu_maes
-            == num_anchors_mmlu_ranks
-            == num_anchors_hellaswag_maes
-            == num_anchors_hellaswag_ranks
-            == num_anchors_winogrande_maes
-            == num_anchors_winogrande_ranks
-            == num_anchors_arc_maes
-            == num_anchors_arc_ranks
-            == num_anchors
-        )
 
-        # [DUPLICATION]
-        # [BENCHMARK]
-        if hellaswag_maes is None:
-            hellaswag_maes = mmlu_maes.copy()
-            hellaswag_maes.loc[:, :] = float("nan")
-        if hellaswag_ranks is None:
-            hellaswag_ranks = mmlu_ranks.copy()
-            hellaswag_ranks.loc[:, :] = float("nan")
-        if winogrande_maes is None:
-            winogrande_maes = mmlu_maes.copy()
-            winogrande_maes.loc[:, :] = float("nan")
-        if winogrande_ranks is None:
-            winogrande_ranks = mmlu_ranks.copy()
-            winogrande_ranks.loc[:, :] = float("nan")
-        if arc_maes is None:
-            arc_maes = mmlu_maes.copy()
-            arc_maes.loc[:, :] = float("nan")
-        if arc_ranks is None:
-            arc_ranks = mmlu_ranks.copy()
-            arc_ranks.loc[:, :] = float("nan")
+    # Extract other benchmark data if not in debug mode
+    if not debug:
+        for i, benchmark in enumerate(benchmark_names[1:], start=2):
+            maes_data, num_anchors_maes = data_for_table_1[i * 2 - 2]
+            ranks_data, num_anchors_ranks = data_for_table_1[i * 2 - 1]
+            benchmark_data[benchmark] = {"maes": maes_data, "ranks": ranks_data}
+            num_anchors_list.extend([num_anchors_maes, num_anchors_ranks])
+
+        # Verify all num_anchors values are the same
+        assert all(na == num_anchors for na in num_anchors_list)
+
+        # Handle None values by creating NaN-filled copies
+        for benchmark in benchmark_names[1:]:  # Skip mmlu as it's the reference
+            for data_type in data_types:
+                if benchmark_data[benchmark][data_type] is None:
+                    # Create a copy of the reference data and fill with NaN
+                    benchmark_data[benchmark][data_type] = benchmark_data[
+                        "mmlu"
+                    ][data_type].copy()
+                    benchmark_data[benchmark][data_type].loc[:, :] = float(
+                        "nan"
+                    )
+
+    # Create convenience variables for backward compatibility
+    if not debug:
+        hellaswag_maes = benchmark_data["hellaswag"]["maes"]
+        hellaswag_ranks = benchmark_data["hellaswag"]["ranks"]
+        winogrande_maes = benchmark_data["winogrande"]["maes"]
+        winogrande_ranks = benchmark_data["winogrande"]["ranks"]
+        arc_maes = benchmark_data["arc"]["maes"]
+        arc_ranks = benchmark_data["arc"]["ranks"]
 
     # [DUPLICATION]
     # [BENCHMARK]

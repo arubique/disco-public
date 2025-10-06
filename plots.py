@@ -23,6 +23,7 @@ from utils import (
     prepare_data,
     create_responses,
 )
+from utils_for_notebooks import merge_methods
 
 
 warnings.filterwarnings("error", category=FutureWarning)
@@ -713,3 +714,79 @@ def make_table_avg(
     if return_perf_table:
         res = res + [model_perf]
     return res
+
+
+def make_results_table(
+    table_avg,
+    table_std,
+    bench,
+    results_table_path,
+    split,
+    merge_with_original=True,
+):
+    # TODO(Alex | 31072025): make constants
+    agg = "leaderboard"  # 'leaderboard', 'scenarios'
+    results = "acc"  # 'acc', 'rank'
+
+    style = {
+        "alpha": 1,
+        "markersize": 3,
+        "markeredgewidth": 1,
+        "elinewidth": 1,
+        "capsize": 3,
+        "linestyle": "",
+    }
+
+    # # TODO(Alex | 31072025): remove hardcoded paths
+    # if merge_with_original:
+    #     # Load table_avg from pickle file
+    #     with open("results/table_avg_original.pickle", "rb") as handle:
+    #         table_avg_original = pickle.load(handle)
+    #     with open("results/table_std_original.pickle", "rb") as handle:
+    #         table_std_original = pickle.load(handle)
+
+    #     table_avg = merge_methods(table_avg, table_avg_original)
+    #     table_std = merge_methods(table_std, table_std_original)
+
+    if results == "acc":
+        ylim = (0, 0.1)
+    elif results == "rank":
+        if agg_metric == "std":
+            ylim = (0, 0.1)
+        else:
+            ylim = (0.5, 1)
+    else:
+        raise NotImplementedError
+
+    cur_methods_for_table = table_avg[bench][split].keys()
+
+    df = make_perf_table(
+        table_avg[bench][split],
+        table_std[bench][split],
+        methods=cur_methods_for_table,
+    )
+
+    pd.set_option("display.max_rows", MAX_TABLE_SIZE)
+    pd.set_option("display.max_columns", MAX_TABLE_SIZE)
+    pd.set_option("display.max_colwidth", MAX_TABLE_SIZE)
+    for num_samples in df.keys():
+        print("#anchor_points:", num_samples)
+        # Reorder columns to put guiding models, PDS type, and stratified first
+        cols = df[num_samples].columns.tolist()
+        first_cols = ["#guiding_models", "PDS type", "stratified"]
+        other_cols = [col for col in cols if col not in first_cols]
+        df[num_samples] = df[num_samples][first_cols + other_cols]
+
+        # Replace all values in #guiding_models column with 382
+        df[num_samples].loc[
+            df[num_samples]["#guiding_models"] == "all", "#guiding_models"
+        ] = 382
+
+        # Sort rows by #guiding_models
+        df[num_samples] = df[num_samples].sort_values(
+            ["PDS type", "stratified", "#guiding_models"]
+        )
+
+        print(df[num_samples])
+
+    df[max(list(df.keys()))].to_csv(results_table_path)

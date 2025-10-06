@@ -7,34 +7,15 @@ from scipy import stats
 import os
 import numpy as np
 
-# from experiments import *
+
 from experiments import RANDOM_SEED, evaluate_scenarios
 from utils import (
     lb_scenarios,
-    # get_lambda,
-    # SuppressPrints,
-    # sigmoid,
-    # item_curve,
-    # item_response_function,
-    # prepare_data,
     dump_pickle,
     load_pickle,
-    alpaca_scenarios,
-    icl_templates_scenarios,
-    helm_lite_scenarios,
 )
 from plots import (
     MODEL_OUTPUTS_PATH,
-    DATA_FOLDER,
-    MAX_TABLE_SIZE,
-    winrate,
-    benchs,
-    splits,
-    methods,
-    # number_items,
-    agg_metric,
-    load_scores,
-    make_perf_table,
     make_table_avg,
     make_results_table,
 )
@@ -209,9 +190,13 @@ def load_and_split_model_outputs(
     return res
 
 
-def main():
-    # [FUNCTION][parsing args]
-    # User input
+def parse_arguments():
+    """
+    Parse command line arguments for the experiment runner.
+
+    Returns:
+        argparse.Namespace: Parsed command line arguments
+    """
     parser = argparse.ArgumentParser(
         description="Example script with named arguments."
     )
@@ -283,32 +268,40 @@ def main():
         help="subsample validation",
     )
 
-    apply_random_seed(RANDOM_SEED)
+    return parser.parse_args()
 
-    args = parser.parse_args()
 
-    # [FUNCTION][choosing estimators]
-    if args.estimators is None or args.estimators == "all":
+def choose_estimators(estimators_arg):
+    """
+    Choose estimators and fitting methods based on the command line argument.
+
+    Args:
+        estimators_arg (str): The estimators argument from command line
+
+    Returns:
+        tuple: (chosen_estimators, chosen_fitting_methods)
+    """
+    if estimators_arg is None or estimators_arg == "all":
         chosen_estimators = ESTIMATORS
         chosen_fitting_methods = FITTING_METHODS
-    elif args.estimators == "best":
+    elif estimators_arg == "best":
         chosen_fitting_methods = BEST_FITTING_METHODS
         chosen_estimators = BASE_ESTIMATORS + [
             f[0] for f in BEST_FITTING_METHODS
         ]
-    elif args.estimators == "mlp":
+    elif estimators_arg == "mlp":
         chosen_fitting_methods = MLP_FITTING_METHODS
         chosen_estimators = BASE_ESTIMATORS + [
             f[0] for f in MLP_FITTING_METHODS
         ]
     else:
-        assert isinstance(args.estimators, str), "estimators must be a string"
-        estimators = args.estimators.replace("__COMMA__", ",").split(",")
-        if ".json" in args.estimators:
+        assert isinstance(estimators_arg, str), "estimators must be a string"
+        estimators = estimators_arg.replace("__COMMA__", ",").split(",")
+        if ".json" in estimators_arg:
             (
                 chosen_estimators,
                 chosen_fitting_methods,
-            ) = load_estimators_and_fitting_methods(args.estimators)
+            ) = load_estimators_and_fitting_methods(estimators_arg)
         else:
             chosen_estimators = [
                 e for e in ESTIMATORS if e in estimators or e in BASE_ESTIMATORS
@@ -316,6 +309,20 @@ def main():
             chosen_fitting_methods = [
                 f for f in FITTING_METHODS if f[0] in estimators
             ]
+
+    return chosen_estimators, chosen_fitting_methods
+
+
+def main():
+    # Parse command line arguments
+    args = parse_arguments()
+
+    apply_random_seed(RANDOM_SEED)
+
+    # Choose estimators and fitting methods
+    chosen_estimators, chosen_fitting_methods = choose_estimators(
+        args.estimators
+    )
 
     if args.results_table_path is None and args.make_results_table:
         if args.cache_path is not None:

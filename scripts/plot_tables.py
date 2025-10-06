@@ -384,14 +384,7 @@ def make_table_1(data_for_table_1):
         ][: 6 if debug else 12]
     )
 
-    # res["baseline"] = {
-    #     "mae": 0.0,
-    #     "rank": 0.0
-    # }
-    # res["ours"] = {
     df = pd.DataFrame(rows)
-
-    # display(df)
 
     latex_str = make_table_1_latex(df, debug=debug)
 

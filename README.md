@@ -96,7 +96,7 @@ As an output you get Google Sheet or CSV table that you can extend with new expe
 .csv files are created for compact scripts running. To run the scrips from the .csv file it should be submitted by the commands specified in the relevant sections, such as e.g:
 
 ```
-export ROOT=./ && export ENV=$ROOT/envs/disco_env && export PROJECT_ROOT_PROVIDED_FOR_STUNED=$ROOT && conda activate $ENV && python -m stnd.run_from_csv --conda_env $ENV --csv_path $ROOT/sheets/train_eval.csv --run_locally --n_groups 1
+export ROOT=. && export ENV=$ROOT/envs/disco_env && export PROJECT_ROOT_PROVIDED_FOR_STUNED=$ROOT && conda activate $ENV && python -m stnd.run_from_csv --conda_env $ENV --csv_path $ROOT/sheets/train_eval.csv --run_locally --n_groups 1
 ```
 
 ### .csv file structure

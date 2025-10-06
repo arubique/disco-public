@@ -474,11 +474,6 @@ def main():
         default=None,
     )
     parser.add_argument(
-        "--merge_with_original",
-        action="store_true",
-        help="merge with original results table",
-    )
-    parser.add_argument(
         "--number_items",
         type=str,
         help="number of items",
@@ -644,7 +639,6 @@ def main():
             bench,
             args.results_table_path,
             split,
-            merge_with_original=args.merge_with_original,
         )
 
 

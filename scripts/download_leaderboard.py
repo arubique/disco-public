@@ -212,11 +212,7 @@ def main():
 
             try:
                 if model not in data:
-                    data[
-                        model
-                    ] = (
-                        {}
-                    )  # TODO(Alex 24.04.2025): check that it works as intended
+                    data[model] = {}
                 if s not in data[model]:
                     data[model][s] = {}
                 aux = load_dataset(model, s, cache_dir=CACHE_DIR)

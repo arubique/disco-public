@@ -722,42 +722,7 @@ def make_results_table(
     bench,
     results_table_path,
     split,
-    merge_with_original=True,
 ):
-    # TODO(Alex | 31072025): make constants
-    agg = "leaderboard"  # 'leaderboard', 'scenarios'
-    results = "acc"  # 'acc', 'rank'
-
-    style = {
-        "alpha": 1,
-        "markersize": 3,
-        "markeredgewidth": 1,
-        "elinewidth": 1,
-        "capsize": 3,
-        "linestyle": "",
-    }
-
-    # # TODO(Alex | 31072025): remove hardcoded paths
-    # if merge_with_original:
-    #     # Load table_avg from pickle file
-    #     with open("results/table_avg_original.pickle", "rb") as handle:
-    #         table_avg_original = pickle.load(handle)
-    #     with open("results/table_std_original.pickle", "rb") as handle:
-    #         table_std_original = pickle.load(handle)
-
-    #     table_avg = merge_methods(table_avg, table_avg_original)
-    #     table_std = merge_methods(table_std, table_std_original)
-
-    if results == "acc":
-        ylim = (0, 0.1)
-    elif results == "rank":
-        if agg_metric == "std":
-            ylim = (0, 0.1)
-        else:
-            ylim = (0.5, 1)
-    else:
-        raise NotImplementedError
-
     cur_methods_for_table = table_avg[bench][split].keys()
 
     df = make_perf_table(

@@ -849,8 +849,9 @@ def process_table_data(
     return table_avg_base, table_std_base, model_perf_base
 
 
-# TODO(Alex|16.09.2025): give more informative name
-def get_data(results_suffixes, return_only_df=False, target_df_dict=None):
+def extract_results_needed_for_tables(
+    results_suffixes, return_only_df=False, target_df_dict=None
+):
     def make_df_key(bench, split, agg_type):
         return f"{bench}_{split}_{agg_type}"
 
@@ -1255,7 +1256,9 @@ def main():
     # - agg_type is the aggregation type ("mae" or "rank")
     # For example: "mmlu_fields_noniid_mae" or "hellaswag_iid_rank"
     if args.target_config_path is not None:
-        target_df_dict = get_data(target_results_suffixes, return_only_df=True)
+        target_df_dict = extract_results_needed_for_tables(
+            target_results_suffixes, return_only_df=True
+        )
     else:
         target_df_dict = None
 
@@ -1269,7 +1272,7 @@ def main():
         ablation_strat,
         num_models_df,
         model_perf_dict,
-    ) = get_data(
+    ) = extract_results_needed_for_tables(
         source_results_suffixes,
         return_only_df=False,
         target_df_dict=target_df_dict,

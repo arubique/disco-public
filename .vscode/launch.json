@@ -1,0 +1,78 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Run Experiment (MMLU Fields PDS)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "run_experiment.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--bench",
+                "mmlu_fields",
+                "--device",
+                "cuda",
+                "--disagreement_type",
+                "pds",
+                "--estimators",
+                "best",
+                "--filename_suffix",
+                "_disagreement_best_47",
+                "--iterations",
+                "5",
+                "--num_workers",
+                "4",
+                "--pca",
+                "256",
+                "--sampling_names",
+                "random,high-disagreement,low-disagreement,low-disagreement@2,high-disagreement@2,low-disagreement@10,high-disagreement@10,low-disagreement@100,high-disagreement@100,high-disagreement+nonstratified,low-disagreement+nonstratified,low-disagreement@2+nonstratified,high-disagreement@2+nonstratified,low-disagreement@10+nonstratified,high-disagreement@10+nonstratified,low-disagreement@100+nonstratified,high-disagreement@100+nonstratified",
+                "--split",
+                "iid",
+                "--skip_irt",
+                "--make_results_table"
+            ],
+            "env": {
+                "PROJECT_ROOT_PROVIDED_FOR_STUNED": "."
+            }
+        },
+        {
+            "name": "Extract Model Outputs",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "./scripts/extract_model_outputs_from_raw_data.py",
+            "console": "integratedTerminal",
+            "env": {
+                "PROJECT_ROOT_PROVIDED_FOR_STUNED": "."
+            }
+        },
+        {
+            "name": "Plot Tables",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "./scripts/plot_tables.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--source_config_path",
+                "./configs/result_paths/pds_results_suffixes.json"
+            ]
+        },
+        {
+            "name": "Download Leaderboard",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "scripts/download_leaderboard.py",
+            "args": [
+                "--lb_type",
+                // "mmlu_fields",
+                "openllm_leaderboard",
+                "--lb_savepath",
+                "None",
+                "--save_only_once"
+            ],
+            "console": "integratedTerminal"
+        }
+    ]
+}

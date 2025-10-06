@@ -1,7 +1,16 @@
-# python 3.11.7
-py-irt
-jsonlines
-matplotlib
-datasets # for downloading data
-torchvision # for MLP
-umap-learn # for pca
+# mkdir -p envs && conda create --prefix ./envs/disco_env python==3.11.7
+stnd @ git+https://github.com/arubique/stnd.git@0d23b52f7742c08b28be560d2d52d450fcd274b7
+ipython==9.6.0
+matplotlib==3.10.1
+scipy==1.15.2
+tqdm==4.67.1
+umap-learn==0.5.7
+jsonlines==4.0.0
+torch==2.7.0
+torchvision==0.22.0 # we import MLPs from there
+typer==0.9.4 # needed for operationable py-irt
+click==8.1.8 # needed for operationable py-irt
+py-irt==0.6.5
+datasets==4.0.0
+gdown==4.6.0 # for newer versions of gdown get "too many requests" error
+h5py==3.14.0

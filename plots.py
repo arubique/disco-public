@@ -384,7 +384,6 @@ def winrate(x, axis):
     return np.argsort(np.argsort(x, axis=axis), axis=axis) / n
 
 
-# TODO(Alex | 31.07.2025): merge with load_data.py
 def load_scores(
     bench,
     split,

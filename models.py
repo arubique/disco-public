@@ -88,5 +88,5 @@ class MLPRegressor(torch.nn.Module):
             loss = criterion(output, y)
             loss.backward()
             optimizer.step()
-            # print(f"DEBUG:Epoch {epoch+1}/{self.n_epochs}, Loss: {loss.item()}")
+
         return self

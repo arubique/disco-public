@@ -637,15 +637,6 @@ def compute_embedding(
     if transform is not None:
         assert pca is not None
     if pca is not None:
-        # if train_emb_unreduced is not None:
-        #     emb = torch.cat([train_emb_unreduced, emb_unreduced], axis=0)
-        # else:
-        #     emb = emb_unreduced
-        # TODO(Alex | 05.05.2025): use umap here
-        # emb = umap.UMAP(
-        #     n_components=pca,
-        #     random_state=RANDOM_SEED
-        # ).fit_transform(emb)
         if transform is None:
             if pca < 0:
                 transform = umap.UMAP(
@@ -660,8 +651,7 @@ def compute_embedding(
 
         emb = transform.transform(emb_unreduced.numpy())
         emb = torch.Tensor(emb)
-        # if train_emb_unreduced is not None:
-        #     emb = emb[len(train_emb_unreduced):]
+
     else:
         emb = emb_unreduced
     return emb, transform
@@ -743,7 +733,7 @@ def make_fitted_weights(config, logger=None):
     )
 
     fitted_weights = {}
-    # TODO(Alex | 03.05.2025): use convert_accs_to_numpy here
+
     train_model_true_accs_np = np.array(
         [
             train_model_true_accs[i][scenario]

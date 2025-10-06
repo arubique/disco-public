@@ -726,11 +726,6 @@ def extract_data_for_table_1(
 ):
     # Group by PDS type and calculate best for each group
     df = source_df[num_anchors]
-    # For debugging:
-    # display(df)
-    # if num_anchors == 100 and not lower_better:
-    #     display(df)
-    # print("DEBUG")
 
     # Keep rows with NaN PDS type and group the rest
     nan_rows = df[df[key].isna()]
@@ -755,7 +750,7 @@ def extract_data_for_table_1(
         "GradientBoostingRegressor_200",
     ]  # keep only Random Forest
     to_drop = [col for col in to_drop if col in grouped_df_source.columns]
-    # print("DEBUG: Dropping", to_drop)
+
     grouped_df_source = grouped_df_source.drop(columns=to_drop)
 
     # Get the columns to find minimum across
@@ -872,7 +867,6 @@ def get_data(results_suffixes, return_only_df=False, target_df_dict=None):
         target_df_num_anchors = target_df_dict["num_anchors"]
         target_df_iid = target_df_dict["iid"]
 
-    # print("DEBUG: uncomment all except for num_models")
     scenarios_to_skip = []
     table_1_data = []
     table_1_data_iid = []
@@ -883,8 +877,6 @@ def get_data(results_suffixes, return_only_df=False, target_df_dict=None):
     )  # different prediction strategies (linear, mlps, RandomForests etc.)
     num_models_df = None  # different number of source models
     ablation_strat = None  # stratified / non-stratified
-
-    # print("DEBUG: 234123")
 
     table_avg_dict = {}
     table_std_dict = {}
@@ -1087,10 +1079,6 @@ def get_data(results_suffixes, return_only_df=False, target_df_dict=None):
                         filename_suffix = per_split[method]
                         # real_bench is a keyword used for making paths, when debug real_bench can be copied from another benchmark
                         bench_key = bench
-                        # if bench in ["winogrande", "arc"]:
-                        #     print("DEBUG: below")
-                        #     bench_key = "hellaswag"
-                        #     # results_path = f'results/accs_hellaswag_split-{split}_iterations-5{filename_suffix}.pickle'
 
                         results_path = f"{RESULTS_FOLDER}/accs_{bench_key}_split-{split}_iterations-5{filename_suffix}.pickle"
                         data = load_pickle(results_path)

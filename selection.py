@@ -227,15 +227,6 @@ def sample_by_disagreement(
                     key=lambda x: disagreement_scores[x],
                     reverse=True,
                 )
-                # print("DEBUG: save disagreement scores per strata")
-                # import os
-                # if '@' in disagreement_key:
-                #     n_guiding_models = int(sampling_name.split('@')[1])
-                # else:
-                #     n_guiding_models = 'all'
-                # os.makedirs(f"disagreement_scores_per_strata", exist_ok=True)
-                # torch.save(disagreement_scores[sorted_by_disagreement], f"disagreement_scores_per_strata/disagreement_sub={sub}_n_guiding={n_guiding_models}.pth")
-                # #########################################################
 
                 if high_first:
                     top_by_disagreement = sorted_by_disagreement[

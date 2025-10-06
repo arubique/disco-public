@@ -49,6 +49,59 @@ def prepare_rank(rank_value):
 
 
 def make_table_1(data_for_table_1):
+    # Helper function to create benchmark data columns
+    def create_benchmark_columns(
+        benchmark_name, mae_data, rank_data, multiplier=100
+    ):
+        """Create mae and rank columns for a benchmark, handling debug mode."""
+        if debug:
+            return [None, None]
+        else:
+            return [
+                prepare_mae(mae_data, multiplier=multiplier),
+                prepare_rank(rank_data),
+            ]
+
+    # Helper function to create a data row
+    def create_data_row(
+        approach,
+        condensation_type,
+        prediction_type,
+        condensation_key,
+        prediction_key,
+        multiplier=100,
+    ):
+        """Create a data row for the table."""
+        row = [approach, condensation_type, num_anchors, prediction_type]
+
+        # Add MMLU data (always present)
+        row.extend(
+            create_benchmark_columns(
+                "MMLU",
+                mmlu_maes.loc[condensation_key][prediction_key],
+                mmlu_ranks.loc[condensation_key][prediction_key],
+                multiplier,
+            )
+        )
+
+        # Add other benchmarks if not in debug mode
+        if not debug:
+            for benchmark in ["hellaswag", "winogrande", "arc"]:
+                row.extend(
+                    create_benchmark_columns(
+                        benchmark,
+                        benchmark_data[benchmark]["maes"].loc[condensation_key][
+                            prediction_key
+                        ],
+                        benchmark_data[benchmark]["ranks"].loc[
+                            condensation_key
+                        ][prediction_key],
+                        multiplier,
+                    )
+                )
+
+        return row[: 6 if debug else 12]
+
     if len(data_for_table_1) == 2:
         print("DEBUG: debug mode, length of data_for_table_1 is 2")
         debug = True
@@ -107,285 +160,37 @@ def make_table_1(data_for_table_1):
         arc_maes = benchmark_data["arc"]["maes"]
         arc_ranks = benchmark_data["arc"]["ranks"]
 
-    # [DUPLICATION]
-    # [BENCHMARK]
-    rows.append(
-        [  # headers
-            "Approach",
-            "Condensation",  # type
-            "Condensation",  # num_anchors
-            "Prediction",  # type
-            "MMLU",  # mae
-            "MMLU",  # rank
-            "hellaswag",  # mae
-            "hellaswag",  # rank
-            "winogrande",  # mae
-            "winogrande",  # rank
-            "arc",  # mae
-            "arc",  # rank
-        ][: 6 if debug else 12]
-    )
-    rows.append(
-        [
-            "",
-            "type",  # type
-            "num_anchors",  # num_anchors
-            "type",  # type
-            "mae",  # mae
-            "rank",  # rank
-            "mae",  # mae
-            "rank",  # rank
-            "mae",  # mae
-            "rank",  # rank
-            "mae",  # mae
-            "rank",  # rank
-        ][: 6 if debug else 12]
-    )
-    rows.append(
-        [  # RANDOM direct eval
-            "Baseline",
-            "Random",
-            num_anchors,
-            "Eval",
-            prepare_mae(mmlu_maes.loc["random"]["naive"], multiplier=100),
-            prepare_rank(mmlu_ranks.loc["random"]["naive"]),
-            None
-            if debug
-            else prepare_mae(
-                hellaswag_maes.loc["random"]["naive"], multiplier=100
-            ),
-            None
-            if debug
-            else prepare_rank(hellaswag_ranks.loc["random"]["naive"]),
-            None
-            if debug
-            else prepare_mae(
-                winogrande_maes.loc["random"]["naive"], multiplier=100
-            ),
-            None
-            if debug
-            else prepare_rank(winogrande_ranks.loc["random"]["naive"]),
-            None
-            if debug
-            else prepare_mae(arc_maes.loc["random"]["naive"], multiplier=100),
-            None if debug else prepare_rank(arc_ranks.loc["random"]["naive"]),
-        ][: 6 if debug else 12]
-    )
-    # tinyBenchmarks
-    rows.append(
-        [  # Random gp-IRT
-            "tinyBenchmarks",
-            "Random",
-            num_anchors,
-            "gp-IRT",
-            prepare_mae(mmlu_maes.loc["random"]["gpirt"], multiplier=100),
-            prepare_rank(mmlu_ranks.loc["random"]["gpirt"]),
-            None
-            if debug
-            else prepare_mae(
-                hellaswag_maes.loc["random"]["gpirt"], multiplier=100
-            ),
-            None
-            if debug
-            else prepare_rank(hellaswag_ranks.loc["random"]["gpirt"]),
-            None
-            if debug
-            else prepare_mae(
-                winogrande_maes.loc["random"]["gpirt"], multiplier=100
-            ),
-            None
-            if debug
-            else prepare_rank(winogrande_ranks.loc["random"]["gpirt"]),
-            None
-            if debug
-            else prepare_mae(arc_maes.loc["random"]["gpirt"], multiplier=100),
-            None if debug else prepare_rank(arc_ranks.loc["random"]["gpirt"]),
-        ][: 6 if debug else 12]
-    )
-    rows.append(
-        [  # anchor-IRT gp-IRT
-            "tinyBenchmarks",
-            "anchor-IRT",
-            num_anchors,
-            "gp-IRT",
-            prepare_mae(mmlu_maes.loc["anchor-irt"]["gpirt"], multiplier=100),
-            prepare_rank(mmlu_ranks.loc["anchor-irt"]["gpirt"]),
-            None
-            if debug
-            else prepare_mae(
-                hellaswag_maes.loc["anchor-irt"]["gpirt"], multiplier=100
-            ),
-            None
-            if debug
-            else prepare_rank(hellaswag_ranks.loc["anchor-irt"]["gpirt"]),
-            None
-            if debug
-            else prepare_mae(
-                winogrande_maes.loc["anchor-irt"]["gpirt"], multiplier=100
-            ),
-            None
-            if debug
-            else prepare_rank(winogrande_ranks.loc["anchor-irt"]["gpirt"]),
-            None
-            if debug
-            else prepare_mae(
-                arc_maes.loc["anchor-irt"]["gpirt"], multiplier=100
-            ),
-            None
-            if debug
-            else prepare_rank(arc_ranks.loc["anchor-irt"]["gpirt"]),
-        ][: 6 if debug else 12]
-    )
-    rows.append(
-        [  # anchor-correctness gp-IRT
-            "tinyBenchmarks",
-            "anchor-correctness",
-            num_anchors,
-            "gp-IRT",
-            prepare_mae(mmlu_maes.loc["anchor"]["gpirt"], multiplier=100),
-            prepare_rank(mmlu_ranks.loc["anchor"]["gpirt"]),
-            None
-            if debug
-            else prepare_mae(
-                hellaswag_maes.loc["anchor"]["gpirt"], multiplier=100
-            ),
-            None
-            if debug
-            else prepare_rank(hellaswag_ranks.loc["anchor"]["gpirt"]),
-            None
-            if debug
-            else prepare_mae(
-                winogrande_maes.loc["anchor"]["gpirt"], multiplier=100
-            ),
-            None
-            if debug
-            else prepare_rank(winogrande_ranks.loc["anchor"]["gpirt"]),
-            None
-            if debug
-            else prepare_mae(arc_maes.loc["anchor"]["gpirt"], multiplier=100),
-            None if debug else prepare_rank(arc_ranks.loc["anchor"]["gpirt"]),
-        ][: 6 if debug else 12]
-    )
-    rows.append(
-        [  # Random KNN
-            "Baseline",
-            "Random",
-            num_anchors,
-            "kNN",
-            prepare_mae(mmlu_maes.loc["random"]["KNN"], multiplier=100),
-            prepare_rank(mmlu_ranks.loc["random"]["KNN"]),
-            None
-            if debug
-            else prepare_mae(
-                hellaswag_maes.loc["random"]["KNN"], multiplier=100
-            ),
-            None
-            if debug
-            else prepare_rank(hellaswag_ranks.loc["random"]["KNN"]),
-            None
-            if debug
-            else prepare_mae(
-                winogrande_maes.loc["random"]["KNN"], multiplier=100
-            ),
-            None
-            if debug
-            else prepare_rank(winogrande_ranks.loc["random"]["KNN"]),
-            None
-            if debug
-            else prepare_mae(arc_maes.loc["random"]["KNN"], multiplier=100),
-            None if debug else prepare_rank(arc_ranks.loc["random"]["KNN"]),
-        ][: 6 if debug else 12]
-    )
-    rows.append(
-        [  # Random fit
-            "Baseline",
-            "Random",
-            num_anchors,
-            "fit",
-            prepare_mae(mmlu_maes.loc["random"]["fit"], multiplier=100),
-            prepare_rank(mmlu_ranks.loc["random"]["fit"]),
-            None
-            if debug
-            else prepare_mae(
-                hellaswag_maes.loc["random"]["fit"], multiplier=100
-            ),
-            None
-            if debug
-            else prepare_rank(hellaswag_ranks.loc["random"]["fit"]),
-            None
-            if debug
-            else prepare_mae(
-                winogrande_maes.loc["random"]["fit"], multiplier=100
-            ),
-            None
-            if debug
-            else prepare_rank(winogrande_ranks.loc["random"]["fit"]),
-            None
-            if debug
-            else prepare_mae(arc_maes.loc["random"]["fit"], multiplier=100),
-            None if debug else prepare_rank(arc_ranks.loc["random"]["fit"]),
-        ][: 6 if debug else 12]
-    )
-    rows.append(
-        [
-            "DISCO (ours)",
-            "High PDS",
-            num_anchors,
-            "kNN",
-            prepare_mae(mmlu_maes.loc["highest"]["KNN"], multiplier=100),
-            prepare_rank(mmlu_ranks.loc["highest"]["KNN"]),
-            None
-            if debug
-            else prepare_mae(
-                hellaswag_maes.loc["highest"]["KNN"], multiplier=100
-            ),
-            None
-            if debug
-            else prepare_rank(hellaswag_ranks.loc["highest"]["KNN"]),
-            None
-            if debug
-            else prepare_mae(
-                winogrande_maes.loc["highest"]["KNN"], multiplier=100
-            ),
-            None
-            if debug
-            else prepare_rank(winogrande_ranks.loc["highest"]["KNN"]),
-            None
-            if debug
-            else prepare_mae(arc_maes.loc["highest"]["KNN"], multiplier=100),
-            None if debug else prepare_rank(arc_ranks.loc["highest"]["KNN"]),
-        ][: 6 if debug else 12]
-    )
-    rows.append(
-        [
-            "DISCO (ours)",
-            "High PDS",
-            num_anchors,
-            "fit",
-            prepare_mae(mmlu_maes.loc["highest"]["fit"], multiplier=100),
-            prepare_rank(mmlu_ranks.loc["highest"]["fit"]),
-            None
-            if debug
-            else prepare_mae(
-                hellaswag_maes.loc["highest"]["fit"], multiplier=100
-            ),
-            None
-            if debug
-            else prepare_rank(hellaswag_ranks.loc["highest"]["fit"]),
-            None
-            if debug
-            else prepare_mae(
-                winogrande_maes.loc["highest"]["fit"], multiplier=100
-            ),
-            None
-            if debug
-            else prepare_rank(winogrande_ranks.loc["highest"]["fit"]),
-            None
-            if debug
-            else prepare_mae(arc_maes.loc["highest"]["fit"], multiplier=100),
-            None if debug else prepare_rank(arc_ranks.loc["highest"]["fit"]),
-        ][: 6 if debug else 12]
-    )
+    # Create header rows
+    header_row_1 = ["Approach", "Condensation", "Condensation", "Prediction"]
+    header_row_2 = ["", "type", "num_anchors", "type"]
+
+    # Add benchmark headers
+    for benchmark in benchmark_names:
+        header_row_1.extend([benchmark.title(), benchmark.title()])
+        header_row_2.extend(["mae", "rank"])
+
+    # Truncate headers based on debug mode
+    header_row_1 = header_row_1[: 6 if debug else 12]
+    header_row_2 = header_row_2[: 6 if debug else 12]
+
+    rows.extend([header_row_1, header_row_2])
+
+    # Define row configurations to eliminate duplication
+    row_configs = [
+        # (approach, condensation_type, prediction_type, condensation_key, prediction_key)
+        ("Baseline", "Random", "Eval", "random", "naive"),
+        ("tinyBenchmarks", "Random", "gp-IRT", "random", "gpirt"),
+        ("tinyBenchmarks", "anchor-IRT", "gp-IRT", "anchor-irt", "gpirt"),
+        ("tinyBenchmarks", "anchor-correctness", "gp-IRT", "anchor", "gpirt"),
+        ("Baseline", "Random", "kNN", "random", "KNN"),
+        ("Baseline", "Random", "fit", "random", "fit"),
+        ("DISCO (ours)", "High PDS", "kNN", "highest", "KNN"),
+        ("DISCO (ours)", "High PDS", "fit", "highest", "fit"),
+    ]
+
+    # Create all data rows using the helper function
+    for config in row_configs:
+        rows.append(create_data_row(*config))
 
     df = pd.DataFrame(rows)
 

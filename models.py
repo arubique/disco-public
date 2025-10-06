@@ -18,10 +18,6 @@ class MLP(torch.nn.Module):
 
     def forward(self, x):
         logits = self.mlp(x.view(x.shape[0], -1))
-        # if self.sigmoid is None:
-        #     probs = logits
-        # else:
-        #     probs = self.sigmoid(logits)
         probs = logits
         return probs
 

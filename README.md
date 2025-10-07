@@ -57,15 +57,20 @@ python scripts/download_model_outputs.py
 
 This script will download the file `data/model_outputs.pickle`.
 
-If instead of downloading this file you want to generate it from scratch using data from open-llm-leaderboard, run the commands below.
+### (Optional) Extract model outputs from open-llm-leaderboard data
+
+If instead of downloading `data/model_outputs.pickle` you want to generate it from scratch using data from open-llm-leaderboard, run the commands below.
+Download a snapshot of the leaderboard used by [tinyBenchmarks](https://arxiv.org/abs/2402.14992), takes ~ 10 hours:
 
 ```
 python ./scripts/download_leaderboard.py --lb_type openllm_leaderboard --lb_savepath ./data/lb_raw_extended.pickle
 ```
 
+Download outputs for additional models following tinyBenchmarks, takes ~ 1 hour:
 ```
 python ./scripts/download_leaderboard.py --lb_type mmlu_fields --lb_savepath ./data/lb_raw.pickle
 ```
+Extract outputs from the leaderboard data, takes ~20 min:
 ```
 python scripts/extract_model_outputs_from_raw_data.py
 ```

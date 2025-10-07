@@ -17,6 +17,18 @@ The sections below include: [**Installation**](#installation) for environment se
 
 Note: All commands are supposed to be run from the root of this repository and all paths are given relatively to it with occam conda environment activated.
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Installation](#installation)
+- [Reproduce results from the paper](#reproduce-results-from-the-paper)
+- [Download model outputs](#download-model-outputs)
+  - [(Optional) Extract model outputs from open-llm-leaderboard data](#optional-extract-model-outputs-from-open-llm-leaderboard-data)
+- [Train DISCO](#train-disco)
+- [Notes on `stnd.run_from_csv.py` and `.csv` files](#note-about-stndrun_from_csvpy-and-csv-files)
+- [Citation](#citation)
+
+
 ## Installation
 
 To create a python environment we use [anaconda](https://www.anaconda.com/).

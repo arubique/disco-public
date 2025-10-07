@@ -1,4 +1,4 @@
-# DISCO: Diversifying Sample Condensation for Accelerating Model Evaluation
+# 🪩 DISCO: Diversifying Sample Condensation for Accelerating Model Evaluation
 
 <div align="center">
   <img src="./figures/teaser.png" alt="DISCO: Diversifying Sample Condensation for Accelerating Model Evaluation" title="DISCO: Diversifying Sample Condensation for Accelerating Model Evaluation" />

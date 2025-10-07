@@ -1,5 +1,7 @@
 # 🪩 DISCO: Diversifying Sample Condensation for Accelerating Model Evaluation
 
+<!-- [![arXiv](https://img.shields.io/badge/arXiv-2402.12991-b31b1b.svg)](https://arxiv.org/abs/XXX) -->
+
 <div align="center">
   <img src="./figures/teaser.png" alt="DISCO: Diversifying Sample Condensation for Accelerating Model Evaluation" title="DISCO: Diversifying Sample Condensation for Accelerating Model Evaluation" />
 </div>

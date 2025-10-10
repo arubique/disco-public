@@ -1,13 +1,15 @@
-# DISCO: Diversifying Sample Condensation for Accelerating Model Evaluation
+# 🪩 DISCO: Diversifying Sample Condensation for Efficient Model Evaluation
+
+[![arXiv](https://img.shields.io/badge/arXiv-2402.12991-b31b1b.svg)](https://arxiv.org/abs/2510.07959)
 
 <div align="center">
-  <img src="./figures/teaser.png" alt="DISCO: Diversifying Sample Condensation for Accelerating Model Evaluation" title="DISCO: Diversifying Sample Condensation for Accelerating Model Evaluation" />
+  <img src="./figures/teaser.png" alt="DISCO: Diversifying Sample Condensation for Efficient Model Evaluation" title="DISCO: Diversifying Sample Condensation for Efficient Model Evaluation" />
 </div>
 
 ## Overview
 
 This is an implementation of the paper [DISCO: Diversifying Sample Condensation
-for Accelerating Model Evaluation](https://arxiv.org/abs/XXX).
+for Efficient Model Evaluation](https://arxiv.org/abs/2510.07959).
 
 Evaluating modern machine learning models has become prohibitively expensive. Benchmarks such as LMMs-Eval and HELM demand thousands of GPU hours per model. Costly evaluation reduces inclusivity, slows the cycle of innovation, and worsens environmental impact.
 The typical approach follows two steps. First, select an anchor subset of data. Second, train a mapping from the accuracy on this subset to the final test result. The drawback is that anchor selection depends on clustering, which can be complex and sensitive to design choices. We argue that promoting diversity among samples is not essential; what matters is to select samples that *maximise diversity in model responses*.
@@ -16,6 +18,18 @@ Our method, **Diversifying Sample Condensation (DISCO)**, selects the top-k samp
 The sections below include: [**Installation**](#installation) for environment setup; [**Reproducing results from the paper**](#reproduce-results-from-the-paper) to generate Table 1 from the paper (no training required, pre-run experiment outputs will be used); [**Download model outputs**](#download-model-outputs) to fetch the data required for training our method; [**Train DISCO**](#train-disco) for training our method and the baselines; [**Notes on `stnd.run_from_csv.py` and `.csv` files**](#note-about-stndrun_from_csvpy-and-csv-files) for details on the experiment runner used to organize the training workflow; and [**Citation**](#citation).
 
 Note: All commands are supposed to be run from the root of this repository and all paths are given relatively to it with occam conda environment activated.
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Installation](#installation)
+- [Reproduce results from the paper](#reproduce-results-from-the-paper)
+- [Download model outputs](#download-model-outputs)
+  - [(Optional) Extract model outputs from open-llm-leaderboard data](#optional-extract-model-outputs-from-open-llm-leaderboard-data)
+- [Train DISCO](#train-disco)
+- [Notes on `stnd.run_from_csv.py` and `.csv` files](#note-about-stndrun_from_csvpy-and-csv-files)
+- [Citation](#citation)
+
 
 ## Installation
 
@@ -57,15 +71,20 @@ python scripts/download_model_outputs.py
 
 This script will download the file `data/model_outputs.pickle`.
 
-If instead of downloading this file you want to generate it from scratch using data from open-llm-leaderboard, run the commands below.
+### (Optional) Extract model outputs from open-llm-leaderboard data
+
+If instead of downloading `data/model_outputs.pickle` you want to generate it from scratch using data from open-llm-leaderboard, run the commands below.
+Download a snapshot of the leaderboard used by [tinyBenchmarks](https://arxiv.org/abs/2402.14992), takes ~ 10 hours:
 
 ```
 python ./scripts/download_leaderboard.py --lb_type openllm_leaderboard --lb_savepath ./data/lb_raw_extended.pickle
 ```
 
+Download outputs for additional models following tinyBenchmarks, takes ~ 1 hour:
 ```
 python ./scripts/download_leaderboard.py --lb_type mmlu_fields --lb_savepath ./data/lb_raw.pickle
 ```
+Extract outputs from the leaderboard data, takes ~20 min:
 ```
 python scripts/extract_model_outputs_from_raw_data.py
 ```
@@ -124,10 +143,22 @@ Immediately after the .csv file submission for the rows that are being run a "st
 
 If something does not allow the script to start the status can be stuck with `Submitted` value. In that case please check the submission log file which is by default in `tmp/tmp_log_for_run_from_csv.out`.
 
+## Acknowledgements
+
+Big thanks to the [EfficientBench](https://github.com/felipemaiapolo/efficbench) repo for providing functions and data we adapted.
+
 ## Citation
 
 Please cite our paper if you use OCCAM in your work:
 
 ```
-Coming soon
+@misc{rubinstein2025discodiversifyingsamplecondensation,
+      title={DISCO: Diversifying Sample Condensation for Efficient Model Evaluation},
+      author={Alexander Rubinstein and Benjamin Raible and Martin Gubri and Seong Joon Oh},
+      year={2025},
+      eprint={2510.07959},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG},
+      url={https://arxiv.org/abs/2510.07959},
+}
 ```

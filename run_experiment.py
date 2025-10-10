@@ -121,14 +121,13 @@ def load_estimators_and_fitting_methods(config_path):
 def load_and_split_model_outputs(
     bench,
     split,
+    model_outputs_path,
     text_to_vector=None,
     return_data_path=False,
     subsample_validation=False,
 ):
     if text_to_vector is not None:
         assert bench in ["helm_lite", "alpaca"]
-
-    model_outputs_path = None
 
     # Loading data
     if bench in [
@@ -138,8 +137,6 @@ def load_and_split_model_outputs(
         "arc",
         "hellaswag",
     ]:
-        model_outputs_path = MODEL_OUTPUTS_PATH
-
         # data
         with open(model_outputs_path, "rb") as handle:
             data = pickle.load(handle)
@@ -267,6 +264,12 @@ def parse_arguments():
         action="store_true",
         help="subsample validation",
     )
+    parser.add_argument(
+        "--model_outputs_path",
+        type=str,
+        help="model outputs path",
+        default=MODEL_OUTPUTS_PATH,
+    )
 
     return parser.parse_args()
 
@@ -360,6 +363,7 @@ def main():
     data, scenarios, set_of_rows, data_path = load_and_split_model_outputs(
         bench,
         split,
+        model_outputs_path=args.model_outputs_path,
         text_to_vector=args.text_to_vector,
         return_data_path=True,
         subsample_validation=args.subsample_validation,
@@ -378,7 +382,7 @@ def main():
     else:
         cache = None
 
-    # ## Results
+    # Results
     results_full, accs_full, sampling_time_dic = evaluate_scenarios(
         data,
         scenario_name,

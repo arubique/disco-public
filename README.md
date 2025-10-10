@@ -1,15 +1,15 @@
-# 🪩 DISCO: Diversifying Sample Condensation for Accelerating Model Evaluation
+# 🪩 DISCO: Diversifying Sample Condensation for Efficient Model Evaluation
 
-<!-- [![arXiv](https://img.shields.io/badge/arXiv-2402.12991-b31b1b.svg)](https://arxiv.org/abs/XXX) -->
+[![arXiv](https://img.shields.io/badge/arXiv-2402.12991-b31b1b.svg)](https://arxiv.org/abs/2510.07959)
 
 <div align="center">
-  <img src="./figures/teaser.png" alt="DISCO: Diversifying Sample Condensation for Accelerating Model Evaluation" title="DISCO: Diversifying Sample Condensation for Accelerating Model Evaluation" />
+  <img src="./figures/teaser.png" alt="DISCO: Diversifying Sample Condensation for Efficient Model Evaluation" title="DISCO: Diversifying Sample Condensation for Efficient Model Evaluation" />
 </div>
 
 ## Overview
 
 This is an implementation of the paper [DISCO: Diversifying Sample Condensation
-for Accelerating Model Evaluation](https://arxiv.org/abs/XXX).
+for Efficient Model Evaluation](https://arxiv.org/abs/2510.07959).
 
 Evaluating modern machine learning models has become prohibitively expensive. Benchmarks such as LMMs-Eval and HELM demand thousands of GPU hours per model. Costly evaluation reduces inclusivity, slows the cycle of innovation, and worsens environmental impact.
 The typical approach follows two steps. First, select an anchor subset of data. Second, train a mapping from the accuracy on this subset to the final test result. The drawback is that anchor selection depends on clustering, which can be complex and sensitive to design choices. We argue that promoting diversity among samples is not essential; what matters is to select samples that *maximise diversity in model responses*.
@@ -143,10 +143,22 @@ Immediately after the .csv file submission for the rows that are being run a "st
 
 If something does not allow the script to start the status can be stuck with `Submitted` value. In that case please check the submission log file which is by default in `tmp/tmp_log_for_run_from_csv.out`.
 
+## Acknowledgements
+
+Big thanks to the [EfficientBench](https://github.com/felipemaiapolo/efficbench) repo for providing functions and data we adapted.
+
 ## Citation
 
 Please cite our paper if you use OCCAM in your work:
 
 ```
-Coming soon
+@misc{rubinstein2025discodiversifyingsamplecondensation,
+      title={DISCO: Diversifying Sample Condensation for Efficient Model Evaluation},
+      author={Alexander Rubinstein and Benjamin Raible and Martin Gubri and Seong Joon Oh},
+      year={2025},
+      eprint={2510.07959},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG},
+      url={https://arxiv.org/abs/2510.07959},
+}
 ```

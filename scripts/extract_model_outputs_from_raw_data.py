@@ -21,7 +21,6 @@ from utils import dump_pickle, load_pickle
 sys.path.pop(0)
 
 
-# MAX_MODELS = 2
 MAX_MODELS = None
 # for some scenarios, these models have limited number of responses
 MODELS_TO_REMOVE = [
@@ -263,23 +262,8 @@ def h5_to_dict(filename):
 
 # adapted from: https://github.com/felipemaiapolo/efficbench/blob/master/generating_data/download-openllmleaderboard/process_lb_data.ipynb
 def process_extended_data(df, max_models=MAX_MODELS):
-    # with open('data/leaderboard_raw_20240118.pickle', 'rb') as handle:
-    # with open(raw_data_path, 'rb') as handle:
-    #     df = pickle.load(handle)
-
-    # df = load_pickle(raw_data_path)
-
     models = list(df.keys())
-    # print(len(models))
-    # 452
 
-    # prune models that have no data
-    # for key1 in df.keys():
-    #     for key2 in df[key1].keys():
-    #         if df[key1][key2]==None:
-    #             try: models.remove(key1)
-    #             except: pass
-    # models.remove('open-llm-leaderboard/details_mindy-labs__mindy-7b') #for some scenarios, this model has a limited number of responses
     for models_to_remove in MODELS_TO_REMOVE:
         models.remove(models_to_remove)
     print(len(models))
@@ -293,10 +277,8 @@ def process_extended_data(df, max_models=MAX_MODELS):
             for model in models
         ]
     )
-    # dates = np.array([datetime.strptime(df[model]['harness_hendrycksTest_abstract_algebra_5']['dates'][0][:10], '%Y_%m_%d') for model in models])
+
     order = np.argsort(dates)[::-1]
-    # print(dates[order][:int(order.shape[0]/4)])
-    print(dates[order][:].shape)  # (393,)
 
     data, max_answers_dict = parse_df_with_results(
         df,
@@ -309,18 +291,9 @@ def process_extended_data(df, max_models=MAX_MODELS):
         max_models=max_models,
     )
 
-    # print(max(max_answers_dict.values()))
-
-    # for sub in df[list(df.keys())[0]].keys():
     cnt = 0
     for sub in data["data"].keys():
         for key in KEYS_TO_ADD:
-            # print(sub, key)
-            # print(order)
-            # print(type(data['data'][sub][key]))
-            # print(len(data['data'][sub][key]))
-            # print(len(data['data'][sub][key][0]))
-            # print(data['data'][sub][key].shape)
             data["data"][sub][key] = data["data"][sub][key][:, order]
             if cnt < 10:
                 print(data["data"][sub][key].shape)
@@ -344,12 +317,8 @@ def process_data(extended_data, df, max_models=MAX_MODELS):
             )
 
     data_lb = extended_data
-    # with open(raw_data_path, 'rb') as handle:
-    #     df = pickle.load(handle)
-    # df = load_pickle(raw_data_path)
+
     models = list(df.keys())
-    print(len(models))
-    # 47
 
     # remove empty model lines
     for key1 in df.keys():
@@ -359,8 +328,6 @@ def process_data(extended_data, df, max_models=MAX_MODELS):
                     models.remove(key1)
                 except:
                     pass
-    print(len(models))
-    # 40
 
     data, max_answers_dict = parse_df_with_results(
         df, models, order=None, max_models=max_models
@@ -441,8 +408,6 @@ def process_data(extended_data, df, max_models=MAX_MODELS):
         "harness_winogrande_5",
     ]:
         print(data["data"][sub]["correctness"].shape)
-        # data['data'][sub]['correctness'] = np.hstack((data['data'][sub]['correctness'],
-        #                                               np.delete(data_lb['data'][sub]['correctness'], delete_ind, axis=1)))
         prune_data(data, data_lb, sub, delete_ind, "correctness")
         prune_data(data, data_lb, sub, delete_ind, "predictions")
         print(data["data"][sub]["correctness"].shape)
@@ -483,17 +448,11 @@ def sort_models_by_dates(data, extended_raw_df, raw_df):
         return order
 
     order = check_order(data, extended_raw_df, raw_df)
-    # data_ordered = deepcopy(data)
+
     data_ordered = data
     data_ordered["models"] = [data["models"][i] for i in order]
     for sub in data_ordered["data"].keys():
-        # print(sub)
-        # if sub in ['harness_arc_challenge_25', 'harness_hellaswag_10', 'harness_truthfulqa_mc_0', 'harness_winogrande_5']:
-        #     print(data_ordered['data'][sub]['predictions'].shape)
-        #     continue
         for key in data_ordered["data"][sub].keys():
-            # if 'predictions' in data_ordered['data'][sub][key].keys():
-            #     data_ordered['data'][sub][key]['predictions'] = data_ordered['data'][sub][key]['predictions'][order]
             print(data_ordered["data"][sub][key].shape)
             if key == "correctness":
                 data_ordered["data"][sub][key] = data_ordered["data"][sub][key][
@@ -527,7 +486,7 @@ def main():
     parser.add_argument(
         "--output_path",
         type=str,
-        default=os.path.join(DATA_FOLDER, "model_outputs.pkl"),
+        default=os.path.join(DATA_FOLDER, "model_outputs.pickle"),
         help="Path to the model outputs pickle file",
     )
     args = parser.parse_args()

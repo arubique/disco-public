@@ -34,9 +34,6 @@
                 "--skip_irt",
                 "--make_results_table"
             ],
-            "env": {
-                "PROJECT_ROOT_PROVIDED_FOR_STUNED": "."
-            }
         },
         {
             "name": "Extract Model Outputs",
@@ -44,9 +41,6 @@
             "request": "launch",
             "program": "./scripts/extract_model_outputs_from_raw_data.py",
             "console": "integratedTerminal",
-            "env": {
-                "PROJECT_ROOT_PROVIDED_FOR_STUNED": "."
-            }
         },
         {
             "name": "Plot Tables",
@@ -58,6 +52,13 @@
                 "--source_config_path",
                 "./configs/result_paths/pds_results_suffixes.json"
             ]
+        },
+        {
+            "name": "Download Model Outputs",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "./scripts/download_model_outputs.py",
+            "console": "integratedTerminal",
         },
         {
             "name": "Download Leaderboard",

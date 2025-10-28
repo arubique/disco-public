@@ -393,12 +393,14 @@ def load_scores(
     filename_suffix="",
     num_it=5,
     data_path=None,
+    filter_indices_by_results=True,
 ):
-    with open(
-        f"{RESULTS_FOLDER}/accs_{bench}_split-{split}_iterations-{num_it}{filename_suffix}.pickle",
-        "rb",
-    ) as handle:
-        data = pickle.load(handle)
+    if filter_indices_by_results:
+        with open(
+            f"{RESULTS_FOLDER}/accs_{bench}_split-{split}_iterations-{num_it}{filename_suffix}.pickle",
+            "rb",
+        ) as handle:
+            data = pickle.load(handle)
 
     if data_path is not None:
         with open(data_path, "rb") as handle:
@@ -497,7 +499,11 @@ def load_scores(
         ]
     )
 
-    return scores[:, list(data.keys())]
+    if filter_indices_by_results:
+        scores = scores[:, list(data.keys())]
+    else:
+        scores = scores
+    return scores
 
 
 def make_table_avg(

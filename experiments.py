@@ -731,6 +731,9 @@ def make_fitted_weights(config, logger=None):
         config["cache_path"],
         config["chosen_fitting_methods"],
     )
+    skip_iterations_when_fixed_sampling = config.get(
+        "skip_iterations_when_fixed_sampling", True
+    )
 
     fitted_weights = {}
 
@@ -768,6 +771,7 @@ def make_fitted_weights(config, logger=None):
                             "train_model_true_accs_np": train_model_true_accs_np,
                             "fitted_weights": fitted_weights,
                             "model_name": model_name,
+                            "skip_iterations_when_fixed_sampling": skip_iterations_when_fixed_sampling,
                         },
                         make_func=make_fitted_model,
                         cache_path=cache_dir,
@@ -810,10 +814,14 @@ def make_fitted_model(config, logger=None):
         config["fitted_weights"],
         config["model_name"],
     )
+    skip_iterations_when_fixed_sampling = config.get(
+        "skip_iterations_when_fixed_sampling", True
+    )
     builder_func, builder_kwargs = builder
     model = builder_func(**builder_kwargs)
     if (
-        sampling_name in ["high-disagreement", "low-disagreement"]
+        skip_iterations_when_fixed_sampling
+        and sampling_name in ["high-disagreement", "low-disagreement"]
         and "@" not in sampling_name
         and it > 0
     ):

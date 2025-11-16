@@ -125,6 +125,7 @@ def load_and_split_model_outputs(
     text_to_vector=None,
     return_data_path=False,
     subsample_validation=False,
+    bootstrap_ratio=0.9,
 ):
     if text_to_vector is not None:
         assert bench in ["helm_lite", "alpaca"]
@@ -154,6 +155,36 @@ def load_and_split_model_outputs(
             set_of_rows = [list(range(0, len(data["models"]), k))]
         else:
             set_of_rows = [list(range(40))]
+            if "noniid@" in split:
+                apply_random_seed(split.split("@")[1])
+                test_models = set_of_rows[0]
+
+                subsample_size = int(bootstrap_ratio * len(test_models))
+                subsampled_test_models = np.random.choice(
+                    test_models,
+                    size=subsample_size,
+                    # replace=True
+                    replace=False,
+                ).tolist()
+                total_models = len(data["models"])
+                train_models = [
+                    model_idx
+                    for model_idx in list(range(total_models))
+                    if model_idx not in test_models
+                ]
+                subsampled_train_models = [
+                    model_idx
+                    for model_idx in list(range(total_models))
+                    if model_idx not in subsampled_test_models
+                ]
+                set_of_rows = [subsampled_test_models]
+                subsampled_models = [
+                    data["models"][i]
+                    for i in data["models"]
+                    if i in subsampled_train_models + subsampled_test_models
+                ]
+                data["models"] = subsampled_models
+
         print(len(set_of_rows[0]), len(data["models"]))
 
     else:
@@ -270,6 +301,9 @@ def parse_arguments():
         help="model outputs path",
         default=MODEL_OUTPUTS_PATH,
     )
+    parser.add_argument(
+        "--bootstrap_ratio", type=float, help="bootstrap ratio", default=0.9
+    )
 
     return parser.parse_args()
 
@@ -350,7 +384,9 @@ def main():
         "arc",
         "hellaswag",
     ]
-    assert split in ["iid", "noniid", "noniid2", "noniid3"]
+    assert (
+        split in ["iid", "noniid", "noniid2", "noniid3"] or "noniid@" in split
+    )
     assert iterations > 0
 
     # Defining other parameters
@@ -367,6 +403,7 @@ def main():
         text_to_vector=args.text_to_vector,
         return_data_path=True,
         subsample_validation=args.subsample_validation,
+        bootstrap_ratio=args.bootstrap_ratio,
     )
 
     chosen_scenarios = list(scenarios.keys())

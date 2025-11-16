@@ -78,6 +78,8 @@ def evaluate_scenarios(
     number_items=[10, 30, 60, 100],
     apply_softmax_to_predictions=True,
     disagreement_type="pds",
+    # different_split_per_iteration=False,
+    # bootstrap_ratio=0.9,
 ):
     """
     Evaluates scenarios by training and validating IRT models, then computing accuracies and updating results.
@@ -156,12 +158,16 @@ def evaluate_scenarios(
             balance_weights,
             scenarios_position,
             subscenarios_position,
+            # _,
         ) = prepare_and_split_data(
             chosen_scenarios,
             scenarios,
             data,
             rows_to_hide,
             n_source_models=n_source_models,
+            # iterations=None,
+            # different_split_per_iteration=different_split_per_iteration,
+            # bootstrap_ratio=bootstrap_ratio,
         )
 
         responses_train = np.zeros(scores_train.shape)

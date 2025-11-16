@@ -684,7 +684,13 @@ def create_responses(chosen_scenarios, scenarios, data):
 
 
 def prepare_and_split_data(
-    chosen_scenarios, scenarios, data, rows_to_hide, n_source_models=None
+    chosen_scenarios,
+    scenarios,
+    data,
+    rows_to_hide,
+    n_source_models=None,
+    iterations=5,
+    different_split_per_iteration=False,
 ):
     """
     Prepares data based on chosen scenarios and splits it into training and testing sets.
@@ -739,6 +745,66 @@ def prepare_and_split_data(
         scores_train = scores_train[:n_source_models]
         # scores_test = scores_test[:n_source_models]
 
+    if iterations is not None:
+        # Bootstrap 90% of train and test data for each iteration
+        scores_train_bootstrapped = {}
+        scores_test_bootstrapped = {}
+        predictions_train_bootstrapped = {}
+        predictions_test_bootstrapped = {}
+        rows_to_hide_per_iteration = {}
+
+        # if different_split_per_iteration:
+
+        n_train = scores_train.shape[0]
+        n_test = scores_test.shape[0]
+        n_train_sample = int(0.9 * n_train)
+        n_test_sample = int(0.9 * n_test)
+
+        for iteration in range(iterations):
+            if different_split_per_iteration:
+                # Bootstrap train data (90% with replacement)
+                train_indices = np.random.choice(
+                    n_train,
+                    size=n_train_sample,
+                    # replace=True
+                    replace=False,
+                )
+                scores_train_bootstrapped[iteration] = scores_train[
+                    train_indices
+                ]
+                predictions_train_bootstrapped[iteration] = predictions_train[
+                    train_indices
+                ]
+
+                # Bootstrap test data (90% with replacement)
+                test_indices = np.random.choice(
+                    n_test,
+                    size=n_test_sample,
+                    # replace=True
+                    replace=False,
+                )
+                scores_test_bootstrapped[iteration] = scores_test[test_indices]
+                predictions_test_bootstrapped[iteration] = predictions_test[
+                    test_indices
+                ]
+                rows_to_hide_per_iteration[iteration] = list(
+                    np.array(rows_to_hide)[test_indices]
+                )
+            else:
+                scores_train_bootstrapped[iteration] = scores_train
+                predictions_train_bootstrapped[iteration] = predictions_train
+                scores_test_bootstrapped[iteration] = scores_test
+                predictions_test_bootstrapped[iteration] = predictions_test
+                # train_indices = list(range(scores_train.shape[0]))
+                # test_indices = scores
+                rows_to_hide_per_iteration[iteration] = rows_to_hide
+
+        scores_train = scores_train_bootstrapped
+        scores_test = scores_test_bootstrapped
+        predictions_train = predictions_train_bootstrapped
+        predictions_test = predictions_test_bootstrapped
+        # else:
+
     return (
         scores_train,
         predictions_train,
@@ -747,6 +813,7 @@ def prepare_and_split_data(
         balance_weights,
         scenarios_position,
         subscenarios_position,
+        rows_to_hide_per_iteration,
     )
 
 

@@ -373,6 +373,7 @@ def evaluate_scenarios(
                 "sampling_names": sampling_names,
                 "predictions_train": predictions_train,
                 "disagreement_type": disagreement_type,
+                "iterations": iterations,
             },
             make_func=make_disagreement_scores_dict,
             cache_path=disagreement_scores_cache_path,
@@ -692,7 +693,7 @@ def make_train_test_model_embeddings(emb_config, logger=None):
                     train_models_embeddings[sampling_name][number_item][it],
                     transform,
                 ) = compute_embedding(
-                    predictions_train,
+                    predictions_train[it],
                     seen_items_dic[sampling_name][number_item][it],
                     pca,
                     None,
@@ -702,7 +703,7 @@ def make_train_test_model_embeddings(emb_config, logger=None):
                     test_models_embeddings[sampling_name][number_item][it],
                     _,
                 ) = compute_embedding(
-                    predictions_test,
+                    predictions_test[it],
                     seen_items_dic[sampling_name][number_item][it],
                     pca,
                     transform,
@@ -737,18 +738,21 @@ def make_fitted_weights(config, logger=None):
 
     fitted_weights = {}
 
-    train_model_true_accs_np = np.array(
-        [
-            train_model_true_accs[i][scenario]
-            for i in range(len(train_model_true_accs))
-        ]
-    )
+    train_model_true_accs_dict = {}
+    for it in range(iterations):
+        train_model_true_accs_dict[it] = np.array(
+            [
+                train_model_true_accs[it][i][scenario]
+                for i in range(len(train_model_true_accs[it]))
+            ]
+        )
 
     for sampling_name in sampling_names:
         fitted_weights[sampling_name] = {}
         for number_item in number_items:
             fitted_weights[sampling_name][number_item] = {}
             for it in range(iterations):
+                train_model_true_accs_np = train_model_true_accs_dict[it]
                 cur_train_models_embeddings_np = train_models_embeddings[
                     sampling_name
                 ][number_item][it].numpy()
@@ -853,26 +857,33 @@ def make_disagreement_scores_dict(config, logger=None):
         sampling_names,
         predictions_train,
         disagreement_type,
+        iterations,
     ) = (
         config["sampling_names"],
         config["predictions_train"],
         config["disagreement_type"],
+        config["iterations"],
     )
     disagreement_scores_dict = {}
     for sampling_name in sampling_names:
-        if not "disagreement" in sampling_name:
-            continue
-        disagreement_key = sampling_name.split("-")[1]
-        if "@" in disagreement_key:
-            n_guiding_models = int(sampling_name.split("@")[1].split("+")[0])
-        else:
-            n_guiding_models = None
-        if not disagreement_key in disagreement_scores_dict:
-            disagreement_scores_dict[
-                disagreement_key
-            ] = get_disagreement_scores(
-                predictions_train,
-                n_guiding_models,
-                disagreement_type=disagreement_type,
-            )
+        for it in range(iterations):
+            disagreement_scores_dict[it] = {}
+            if not "disagreement" in sampling_name:
+                continue
+            disagreement_key = sampling_name.split("-")[1]
+            if "@" in disagreement_key:
+                n_guiding_models = int(
+                    sampling_name.split("@")[1].split("+")[0]
+                )
+            else:
+                n_guiding_models = None
+            if not disagreement_key in disagreement_scores_dict:
+                disagreement_scores_dict[it][
+                    disagreement_key
+                ] = get_disagreement_scores(
+                    predictions_train[it],
+                    n_guiding_models,
+                    disagreement_type=disagreement_type,
+                )
+
     return disagreement_scores_dict

@@ -691,6 +691,7 @@ def prepare_and_split_data(
     n_source_models=None,
     iterations=5,
     different_split_per_iteration=False,
+    bootstrap_ratio=0.9,
 ):
     """
     Prepares data based on chosen scenarios and splits it into training and testing sets.
@@ -757,8 +758,8 @@ def prepare_and_split_data(
 
         n_train = scores_train.shape[0]
         n_test = scores_test.shape[0]
-        n_train_sample = int(0.9 * n_train)
-        n_test_sample = int(0.9 * n_test)
+        n_train_sample = int(bootstrap_ratio * n_train)
+        n_test_sample = int(bootstrap_ratio * n_test)
 
         for iteration in range(iterations):
             if different_split_per_iteration:

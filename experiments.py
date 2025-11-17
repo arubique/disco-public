@@ -78,6 +78,7 @@ def evaluate_scenarios(
     number_items=[10, 30, 60, 100],
     apply_softmax_to_predictions=True,
     disagreement_type="pds",
+    skip_it_fixed_sampling=True,
     # different_split_per_iteration=False,
     # bootstrap_ratio=0.9,
 ):
@@ -552,6 +553,7 @@ def evaluate_scenarios(
                 "scenario": scenario,
                 "cache_path": fitted_weights_cache_path,
                 "chosen_fitting_methods": chosen_fitting_methods,
+                "skip_iterations_when_fixed_sampling": skip_it_fixed_sampling,
             },
             make_func=make_fitted_weights,
             cache_path=fitted_weights_cache_path,

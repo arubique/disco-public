@@ -304,7 +304,11 @@ def parse_arguments():
     parser.add_argument(
         "--bootstrap_ratio", type=float, help="bootstrap ratio", default=0.9
     )
-
+    parser.add_argument(
+        "--do_not_skip_it_fixed_sampling",
+        action="store_true",
+        help="do not skip iterations when fixed sampling",
+    )
     return parser.parse_args()
 
 
@@ -442,6 +446,7 @@ def main():
         number_items=[int(item) for item in args.number_items.split(",")],
         apply_softmax_to_predictions=(args.text_to_vector is None),
         disagreement_type=args.disagreement_type,
+        skip_it_fixed_sampling=(not args.do_not_skip_it_fixed_sampling),
     )
 
     if args.cache_path is not None:

@@ -309,6 +309,9 @@ def parse_arguments():
         action="store_true",
         help="do not skip iterations when fixed sampling",
     )
+    parser.add_argument(
+        "--vary_selection", action="store_true", help="vary selection"
+    )
     return parser.parse_args()
 
 
@@ -447,6 +450,7 @@ def main():
         apply_softmax_to_predictions=(args.text_to_vector is None),
         disagreement_type=args.disagreement_type,
         skip_it_fixed_sampling=(not args.do_not_skip_it_fixed_sampling),
+        vary_selection=args.vary_selection,
     )
 
     if args.cache_path is not None:

@@ -635,6 +635,24 @@ def sample_items(
             #     n_guiding_models = int(sampling_name.split('@')[1])
             # else:
             #     n_guiding_models = None
+            # disagreement_per_sampling = disagreement_scores_dict[sampling_name]
+            # if isinstance(disagreement_per_sampling, dict):
+            #     cur_disagreement_scores = disagreement_per_sampling[it]
+            # else:
+            #     cur_disagreement_scores = disagreement_per_sampling
+            cur_disagreement_scores = {}
+            for (
+                disagreement_sampling_name,
+                disagreement_scores,
+            ) in disagreement_scores_dict.items():
+                if isinstance(disagreement_scores, dict):
+                    cur_disagreement_scores[
+                        disagreement_sampling_name
+                    ] = disagreement_scores[it]
+                else:
+                    cur_disagreement_scores[
+                        disagreement_sampling_name
+                    ] = disagreement_scores
             item_weights, seen_items, unseen_items = sample_by_disagreement(
                 sampling_name,
                 chosen_scenarios,
@@ -644,7 +662,7 @@ def sample_items(
                 num_samples_in_test=responses_test.shape[1],
                 predictions_train=predictions_train,
                 balance_weights=balance_weights,
-                disagreement_scores_dict=disagreement_scores_dict,
+                disagreement_scores_dict=cur_disagreement_scores,
                 random_seed=it,
                 high_first=("high" in sampling_name),
                 # n_guiding_models=n_guiding_models

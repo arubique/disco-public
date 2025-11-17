@@ -79,6 +79,7 @@ def evaluate_scenarios(
     apply_softmax_to_predictions=True,
     disagreement_type="pds",
     skip_it_fixed_sampling=True,
+    vary_selection=False,
     # different_split_per_iteration=False,
     # bootstrap_ratio=0.9,
 ):
@@ -380,6 +381,8 @@ def evaluate_scenarios(
                 "sampling_names": sampling_names,
                 "predictions_train": predictions_train,
                 "disagreement_type": disagreement_type,
+                "vary_selection": vary_selection,
+                "iterations": iterations,
             },
             make_func=make_disagreement_scores_dict,
             cache_path=disagreement_scores_cache_path,
@@ -861,10 +864,14 @@ def make_disagreement_scores_dict(config, logger=None):
         sampling_names,
         predictions_train,
         disagreement_type,
+        vary_selection,
+        iterations,
     ) = (
         config["sampling_names"],
         config["predictions_train"],
         config["disagreement_type"],
+        config["vary_selection"],
+        config["iterations"],
     )
     disagreement_scores_dict = {}
     for sampling_name in sampling_names:
@@ -876,11 +883,22 @@ def make_disagreement_scores_dict(config, logger=None):
         else:
             n_guiding_models = None
         if not disagreement_key in disagreement_scores_dict:
-            disagreement_scores_dict[
-                disagreement_key
-            ] = get_disagreement_scores(
-                predictions_train,
-                n_guiding_models,
-                disagreement_type=disagreement_type,
-            )
+            if vary_selection:
+                disagreement_scores_dict[disagreement_key] = {}
+                for it in range(iterations):
+                    disagreement_scores_dict[disagreement_key][
+                        it
+                    ] = get_disagreement_scores(
+                        predictions_train,
+                        n_guiding_models,
+                        disagreement_type=disagreement_type,
+                    )
+            else:
+                disagreement_scores_dict[
+                    disagreement_key
+                ] = get_disagreement_scores(
+                    predictions_train,
+                    n_guiding_models,
+                    disagreement_type=disagreement_type,
+                )
     return disagreement_scores_dict

@@ -134,5 +134,6 @@ def estimate_ability_parameters(
             "results/estimate_ability_parameters_timing.txt", "a"
         ) as file:
             file.write(f"{D} {len(seen_items)} {elapsed_time}\n")
+    # print(f"Time taken by estimate_ability_parameters for {len(seen_items)} items: {elapsed_time} seconds")
 
     return optimal_theta

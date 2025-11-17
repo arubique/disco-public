@@ -175,6 +175,8 @@ def evaluate_scenarios(
         responses_train = np.zeros(scores_train.shape)
         responses_test = np.zeros(scores_test.shape)
 
+        start_time_pre_sampling_stage = time.time()
+
         # Threshold responses
         cs = np.linspace(0.01, 0.99, 1000)  # Threshold values to consider
         for scenario in chosen_scenarios:
@@ -355,6 +357,14 @@ def evaluate_scenarios(
                 create_irt_dataset(responses_train, dataset_name)
                 train_irt_model(dataset_name, model_name, D, lr, epochs, device)
                 A, B, Theta = load_irt_parameters(model_name)
+
+        end_time_pre_sampling_stage = time.time()
+        elapsed_time_pre_sampling_stage = (
+            end_time_pre_sampling_stage - start_time_pre_sampling_stage
+        )
+        print(
+            f"Time taken by pre-sampling stage: {elapsed_time_pre_sampling_stage} seconds"
+        )
 
         print("\niv) sampling")
         (

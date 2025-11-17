@@ -625,11 +625,14 @@ def sample_items(
     if skip_irt and sampling_name == "anchor-irt":
         raise NotImplementedError
 
+    elapsed_per_it = []
+
     item_weights_dic, seen_items_dic, unseen_items_dic = {}, {}, {}
     start_time = time.time()
 
     for it in range(iterations):
         # if sampling_name == 'high-disagreement':
+        start_time_for_iteration = time.time()
         if "disagreement" in sampling_name:
             # if '@' in sampling_name:
             #     n_guiding_models = int(sampling_name.split('@')[1])
@@ -709,9 +712,25 @@ def sample_items(
             seen_items,
             unseen_items,
         )
+        end_time_for_iteration = time.time()
+        elapsed_time_for_iteration = (
+            end_time_for_iteration - start_time_for_iteration
+        )
+        print(
+            f"Time taken by sampling with {sampling_name} for iteration {it}: {elapsed_time_for_iteration} seconds"
+        )
+        elapsed_per_it.append(elapsed_time_for_iteration)
 
     end_time = time.time()
     elapsed_time = (end_time - start_time) / iterations
+    print(
+        f"Time taken by sampling with {sampling_name}: {elapsed_time} seconds"
+    )
+
+    elapsed_per_it = np.array(elapsed_per_it)
+    print(
+        f"Average time taken by sampling with {sampling_name} for each iteration: {np.mean(elapsed_per_it)} +/- {np.std(elapsed_per_it)} seconds"
+    )
 
     return item_weights_dic, seen_items_dic, unseen_items_dic, elapsed_time
 

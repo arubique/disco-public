@@ -178,44 +178,47 @@ def evaluate_scenarios(
 
         start_time_pre_sampling_stage = time.time()
 
-        # Threshold responses
-        cs = np.linspace(0.01, 0.99, 1000)  # Threshold values to consider
-        for scenario in chosen_scenarios:
-            ind = scenarios_position[scenario]
+        if not skip_irt:
+            # Threshold responses
+            cs = np.linspace(0.01, 0.99, 1000)  # Threshold values to consider
+            for scenario in chosen_scenarios:
+                ind = scenarios_position[scenario]
 
-            if cache is not None:
-                cache_key = make_cache_key(
-                    scenario_name,
-                    split_number,
-                    f"{scenario}_{chosen_scenarios}_c",
-                )
-            else:
-                cache_key = None
-            if cache_key is not None and cache_key in cache:
-                c = cache[cache_key]
-            else:
-                # Find the best threshold value that minimizes the difference between mean responses and mean scores
-                c = cs[
-                    np.argmin(
-                        [
-                            np.mean(
-                                (
-                                    np.abs(
-                                        (scores_train[:, ind] > c).mean(axis=1)
-                                        - scores_train[:, ind].mean(axis=1)
+                if cache is not None:
+                    cache_key = make_cache_key(
+                        scenario_name,
+                        split_number,
+                        f"{scenario}_{chosen_scenarios}_c",
+                    )
+                else:
+                    cache_key = None
+                if cache_key is not None and cache_key in cache:
+                    c = cache[cache_key]
+                else:
+                    # Find the best threshold value that minimizes the difference between mean responses and mean scores
+                    c = cs[
+                        np.argmin(
+                            [
+                                np.mean(
+                                    (
+                                        np.abs(
+                                            (scores_train[:, ind] > c).mean(
+                                                axis=1
+                                            )
+                                            - scores_train[:, ind].mean(axis=1)
+                                        )
                                     )
                                 )
-                            )
-                            for c in cs
-                        ]
-                    )
-                ]
-                # Apply the threshold to train and test responses
-                if cache_key is not None:
-                    cache[cache_key] = c
-                    dump_pickle(cache, cache["cache_path"])
-            responses_train[:, ind] = (scores_train[:, ind] > c).astype(int)
-            responses_test[:, ind] = (scores_test[:, ind] > c).astype(int)
+                                for c in cs
+                            ]
+                        )
+                    ]
+                    # Apply the threshold to train and test responses
+                    if cache_key is not None:
+                        cache[cache_key] = c
+                        dump_pickle(cache, cache["cache_path"])
+                responses_train[:, ind] = (scores_train[:, ind] > c).astype(int)
+                responses_test[:, ind] = (scores_test[:, ind] > c).astype(int)
 
         # Initialize a dictionary to hold real accuracies
         accs_true = compute_true_acc(

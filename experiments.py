@@ -80,6 +80,7 @@ def evaluate_scenarios(
     disagreement_type="pds",
     skip_it_fixed_sampling=True,
     vary_selection=False,
+    skip_embeddings=False,
     # different_split_per_iteration=False,
     # bootstrap_ratio=0.9,
 ):
@@ -540,66 +541,72 @@ def evaluate_scenarios(
             else None
         )
 
-        start_time_embedding_stage = time.time()
-        (
-            train_models_embeddings,
-            test_models_embeddings,
-        ) = make_or_load_from_cache(
-            object_name="train_test_model_embeddings",
-            object_config={
-                "sampling_names": sampling_names,
-                "number_items": number_items,
-                "iterations": iterations,
-                "predictions_train": predictions_train,
-                "seen_items_dic": seen_items_dic,
-                "predictions_test": predictions_test,
-                "seen_items_dic": seen_items_dic,
-                "pca": pca,
-                "apply_softmax": apply_softmax_to_predictions,
-            },
-            make_func=make_train_test_model_embeddings,
-            cache_path=emb_cache_path,
-        )
-        end_time_embedding_stage = time.time()
-        elapsed_time_embedding_stage = (
-            end_time_embedding_stage - start_time_embedding_stage
-        )
-        print(
-            f"Time taken by embedding stage: {elapsed_time_embedding_stage} seconds"
-        )
-
-        start_time_fitted_weights_stage = time.time()
-        fitted_weights_cache_path = (
-            make_cache_subpath(
-                cache, scenario_name, split_number, f"fitted_weights_path"
+        if not skip_embeddings:
+            start_time_embedding_stage = time.time()
+            (
+                train_models_embeddings,
+                test_models_embeddings,
+            ) = make_or_load_from_cache(
+                object_name="train_test_model_embeddings",
+                object_config={
+                    "sampling_names": sampling_names,
+                    "number_items": number_items,
+                    "iterations": iterations,
+                    "predictions_train": predictions_train,
+                    "seen_items_dic": seen_items_dic,
+                    "predictions_test": predictions_test,
+                    "seen_items_dic": seen_items_dic,
+                    "pca": pca,
+                    "apply_softmax": apply_softmax_to_predictions,
+                },
+                make_func=make_train_test_model_embeddings,
+                cache_path=emb_cache_path,
             )
-            if cache_key is not None
-            else None
-        )
+            end_time_embedding_stage = time.time()
+            elapsed_time_embedding_stage = (
+                end_time_embedding_stage - start_time_embedding_stage
+            )
+            print(
+                f"Time taken by embedding stage: {elapsed_time_embedding_stage} seconds"
+            )
 
-        fitted_weights = make_or_load_from_cache(
-            object_name="fitted_weights",
-            object_config={
-                "sampling_names": sampling_names,
-                "number_items": number_items,
-                "iterations": iterations,
-                "train_models_embeddings": train_models_embeddings,
-                "train_model_true_accs": train_model_true_accs,
-                "scenario": scenario,
-                "cache_path": fitted_weights_cache_path,
-                "chosen_fitting_methods": chosen_fitting_methods,
-                "skip_iterations_when_fixed_sampling": skip_it_fixed_sampling,
-            },
-            make_func=make_fitted_weights,
-            cache_path=fitted_weights_cache_path,
-        )
-        end_time_fitted_weights_stage = time.time()
-        elapsed_time_fitted_weights_stage = (
-            end_time_fitted_weights_stage - start_time_fitted_weights_stage
-        )
-        print(
-            f"Time taken by fitted weights stage: {elapsed_time_fitted_weights_stage} seconds"
-        )
+            start_time_fitted_weights_stage = time.time()
+            fitted_weights_cache_path = (
+                make_cache_subpath(
+                    cache, scenario_name, split_number, f"fitted_weights_path"
+                )
+                if cache_key is not None
+                else None
+            )
+
+            scenario = scenario_name
+            fitted_weights = make_or_load_from_cache(
+                object_name="fitted_weights",
+                object_config={
+                    "sampling_names": sampling_names,
+                    "number_items": number_items,
+                    "iterations": iterations,
+                    "train_models_embeddings": train_models_embeddings,
+                    "train_model_true_accs": train_model_true_accs,
+                    "scenario": scenario,
+                    "cache_path": fitted_weights_cache_path,
+                    "chosen_fitting_methods": chosen_fitting_methods,
+                    "skip_iterations_when_fixed_sampling": skip_it_fixed_sampling,
+                },
+                make_func=make_fitted_weights,
+                cache_path=fitted_weights_cache_path,
+            )
+            end_time_fitted_weights_stage = time.time()
+            elapsed_time_fitted_weights_stage = (
+                end_time_fitted_weights_stage - start_time_fitted_weights_stage
+            )
+            print(
+                f"Time taken by fitted weights stage: {elapsed_time_fitted_weights_stage} seconds"
+            )
+        else:
+            fitted_weights = None
+            train_models_embeddings = None
+            test_models_embeddings = None
 
         start_time_accuracies_stage = time.time()
         for j in tqdm(range(len(rows_to_hide))):

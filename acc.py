@@ -499,68 +499,71 @@ def calculate_accuracies(
                             sampling_name + "_naive"
                         ][scenario].append(naive)
 
-                        # [ADD][new estimator]
-                        if (
-                            len(
+                        if test_models_embeddings is None:
+                            pass
+                        else:
+                            # [ADD][new estimator]
+                            if (
+                                len(
+                                    accs[rows_to_hide[j]][number_item][
+                                        "mean_train_score"
+                                    ][scenario]
+                                )
+                                < iterations
+                            ):
                                 accs[rows_to_hide[j]][number_item][
                                     "mean_train_score"
-                                ][scenario]
-                            )
-                            < iterations
-                        ):
-                            accs[rows_to_hide[j]][number_item][
-                                "mean_train_score"
-                            ][scenario].append(
-                                mean_train_score
-                            )  # does not depend on sampling type
+                                ][scenario].append(
+                                    mean_train_score
+                                )  # does not depend on sampling type
 
-                        test_model_embedding = test_models_embeddings[
-                            sampling_name
-                        ][number_item][it][j]
-
-                        # [ADD][new estimator] KNN
-                        knn_acc = compute_acc_knn(
-                            test_model_embedding=test_model_embedding,
-                            train_model_embeddings=train_models_embeddings[
+                            test_model_embedding = test_models_embeddings[
                                 sampling_name
-                            ][number_item][it],
-                            scenario=scenario,
-                            train_model_true_accs=train_model_true_accs,
-                        )
-                        accs[rows_to_hide[j]][number_item][
-                            sampling_name + "_KNN"
-                        ][scenario].append(knn_acc)
+                            ][number_item][it][j]
 
-                        # [ADD][new estimator] fitted weights
-                        if (
-                            len(
+                            # [ADD][new estimator] KNN
+                            knn_acc = compute_acc_knn(
+                                test_model_embedding=test_model_embedding,
+                                train_model_embeddings=train_models_embeddings[
+                                    sampling_name
+                                ][number_item][it],
+                                scenario=scenario,
+                                train_model_true_accs=train_model_true_accs,
+                            )
+                            accs[rows_to_hide[j]][number_item][
+                                sampling_name + "_KNN"
+                            ][scenario].append(knn_acc)
+
+                            # [ADD][new estimator] fitted weights
+                            if (
+                                len(
+                                    accs[rows_to_hide[j]][number_item][
+                                        "perfect_knn"
+                                    ][scenario]
+                                )
+                                < iterations
+                            ):
+                                perfect_knn_acc = compute_perfect_knn(
+                                    train_model_true_accs,
+                                    test_model_true_accs[rows_to_hide[j]],
+                                    scenario,
+                                )
                                 accs[rows_to_hide[j]][number_item][
                                     "perfect_knn"
-                                ][scenario]
-                            )
-                            < iterations
-                        ):
-                            perfect_knn_acc = compute_perfect_knn(
-                                train_model_true_accs,
-                                test_model_true_accs[rows_to_hide[j]],
-                                scenario,
-                            )
-                            accs[rows_to_hide[j]][number_item]["perfect_knn"][
-                                scenario
-                            ].append(
-                                perfect_knn_acc
-                            )  # does not depend on sampling type
+                                ][scenario].append(
+                                    perfect_knn_acc
+                                )  # does not depend on sampling type
 
-                        # [ADD][new estimator] fitted weights
-                        for model_key, fitted_model in fitted_weights[
-                            sampling_name
-                        ][number_item][it].items():
-                            fitted_acc = fitted_model.predict(
-                                test_model_embedding.numpy().reshape(1, -1)
-                            )[0]
-                            accs[rows_to_hide[j]][number_item][
-                                sampling_name + f"_{model_key}"
-                            ][scenario].append(fitted_acc)
+                            # [ADD][new estimator] fitted weights
+                            for model_key, fitted_model in fitted_weights[
+                                sampling_name
+                            ][number_item][it].items():
+                                fitted_acc = fitted_model.predict(
+                                    test_model_embedding.numpy().reshape(1, -1)
+                                )[0]
+                                accs[rows_to_hide[j]][number_item][
+                                    sampling_name + f"_{model_key}"
+                                ][scenario].append(fitted_acc)
 
                         if not skip_irt:
                             data_part_pirt = (

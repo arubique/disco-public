@@ -312,6 +312,9 @@ def parse_arguments():
     parser.add_argument(
         "--vary_selection", action="store_true", help="vary selection"
     )
+    parser.add_argument(
+        "--skip_embeddings", action="store_true", help="skip embeddings"
+    )
     return parser.parse_args()
 
 
@@ -325,6 +328,9 @@ def choose_estimators(estimators_arg):
     Returns:
         tuple: (chosen_estimators, chosen_fitting_methods)
     """
+    # if "only@" in estimators_arg:
+    #     only_estimator = estimators_arg.split("@")[1]
+
     if estimators_arg is None or estimators_arg == "all":
         chosen_estimators = ESTIMATORS
         chosen_fitting_methods = FITTING_METHODS
@@ -346,6 +352,14 @@ def choose_estimators(estimators_arg):
                 chosen_estimators,
                 chosen_fitting_methods,
             ) = load_estimators_and_fitting_methods(estimators_arg)
+        elif "only@" in estimators_arg:
+            only_estimator = estimators_arg.split("@")[1]
+            chosen_fitting_methods = [
+                f for f in FITTING_METHODS if f[0] == only_estimator
+            ]
+            if len(chosen_fitting_methods) == 0:
+                chosen_estimators = [only_estimator]
+
         else:
             chosen_estimators = [
                 e for e in ESTIMATORS if e in estimators or e in BASE_ESTIMATORS
@@ -451,6 +465,7 @@ def main():
         disagreement_type=args.disagreement_type,
         skip_it_fixed_sampling=(not args.do_not_skip_it_fixed_sampling),
         vary_selection=args.vary_selection,
+        skip_embeddings=args.skip_embeddings,
     )
 
     if args.cache_path is not None:

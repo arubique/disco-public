@@ -716,21 +716,21 @@ def sample_items(
         elapsed_time_for_iteration = (
             end_time_for_iteration - start_time_for_iteration
         )
-        print(
-            f"Time taken by sampling with {sampling_name} for iteration {it}: {elapsed_time_for_iteration} seconds"
-        )
+        # print(
+        #     f"Time taken by sampling with {sampling_name} for iteration {it}: {elapsed_time_for_iteration} seconds"
+        # )
         elapsed_per_it.append(elapsed_time_for_iteration)
 
     end_time = time.time()
     elapsed_time = (end_time - start_time) / iterations
-    print(
-        f"Time taken by sampling with {sampling_name}: {elapsed_time} seconds"
-    )
+    # print(
+    #     f"Time taken by sampling with {sampling_name}: {elapsed_time} seconds"
+    # )
 
     elapsed_per_it = np.array(elapsed_per_it)
-    print(
-        f"Average time taken by sampling with {sampling_name} for each iteration: {np.mean(elapsed_per_it)} +/- {np.std(elapsed_per_it)} seconds"
-    )
+    # print(
+    #     f"Average time taken by sampling with {sampling_name} for each iteration: {np.mean(elapsed_per_it)} +/- {np.std(elapsed_per_it)} seconds"
+    # )
 
     return item_weights_dic, seen_items_dic, unseen_items_dic, elapsed_time
 

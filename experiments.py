@@ -124,6 +124,7 @@ def evaluate_scenarios(
                 "high-disagreement",
                 "low-disagreement",
             ]
+            or "high-disagreement" in s
             for s in sampling_names
         ]
     )  # [ADD][new sampling]
@@ -367,6 +368,7 @@ def evaluate_scenarios(
         )
 
         print("\niv) sampling")
+        start_time_sampling_stage = time.time()
         (
             item_weights_dic,
             seen_items_dic,
@@ -506,6 +508,14 @@ def evaluate_scenarios(
             ) as handle:
                 pickle.dump(dic, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
+        end_time_sampling_stage = time.time()
+        elapsed_time_pre_sampling_stage = (
+            end_time_sampling_stage - start_time_sampling_stage
+        )
+        print(
+            f"Time taken by sampling stage: {elapsed_time_pre_sampling_stage} seconds"
+        )
+
         print("\nv) computing accuracies")
         start_time = time.time()
 
@@ -527,6 +537,7 @@ def evaluate_scenarios(
             else None
         )
 
+        start_time_embedding_stage = time.time()
         (
             train_models_embeddings,
             test_models_embeddings,
@@ -546,7 +557,15 @@ def evaluate_scenarios(
             make_func=make_train_test_model_embeddings,
             cache_path=emb_cache_path,
         )
+        end_time_embedding_stage = time.time()
+        elapsed_time_embedding_stage = (
+            end_time_embedding_stage - start_time_embedding_stage
+        )
+        print(
+            f"Time taken by embedding stage: {elapsed_time_embedding_stage} seconds"
+        )
 
+        start_time_fitted_weights_stage = time.time()
         fitted_weights_cache_path = (
             make_cache_subpath(
                 cache, scenario_name, split_number, f"fitted_weights_path"
@@ -571,7 +590,15 @@ def evaluate_scenarios(
             make_func=make_fitted_weights,
             cache_path=fitted_weights_cache_path,
         )
+        end_time_fitted_weights_stage = time.time()
+        elapsed_time_fitted_weights_stage = (
+            end_time_fitted_weights_stage - start_time_fitted_weights_stage
+        )
+        print(
+            f"Time taken by fitted weights stage: {elapsed_time_fitted_weights_stage} seconds"
+        )
 
+        start_time_accuracies_stage = time.time()
         for j in tqdm(range(len(rows_to_hide))):
             out.append(
                 calculate_accuracies(
@@ -599,6 +626,13 @@ def evaluate_scenarios(
                     chosen_estimators,
                 )
             )
+        end_time_accuracies_stage = time.time()
+        elapsed_time_accuracies_stage = (
+            end_time_accuracies_stage - start_time_accuracies_stage
+        )
+        print(
+            f"Time taken by accuracies stage: {elapsed_time_accuracies_stage} seconds"
+        )
         elapsed_time = np.round(time.time() - start_time)
         print(f" - finished in {elapsed_time} seconds")
 

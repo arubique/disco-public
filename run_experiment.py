@@ -359,6 +359,10 @@ def choose_estimators(estimators_arg):
             ]
             if len(chosen_fitting_methods) == 0:
                 chosen_estimators = [only_estimator]
+            if only_estimator == "gpirt":
+                chosen_estimators += ["naive", "pirt", "cirt"]
+            elif only_estimator == "pirt":
+                chosen_estimators += ["naive"]
 
         else:
             chosen_estimators = [

@@ -1,6 +1,8 @@
 from tqdm import tqdm
 from stnd.utility.utils import parse_list_from_string
 import numpy as np
+from datasets import load_dataset
+import pandas as pd
 
 # import torch
 # from transformers import AutoTokenizer, AutoModel
@@ -8,6 +10,53 @@ import numpy as np
 MAX_NUM_ANSWERS = 31  # 5 for arc_harness_25, 31 for truth_harness_mc
 KEYS_TO_ADD = ["correctness", "predictions"]
 SUB_TO_SKIP = ["harness_gsm8k_5"]
+CACHE_DIR = "./cache_dir"
+
+
+def openllmname_to_hf_model_id(openllm_name):
+    assert openllm_name.startswith(
+        "open-llm-leaderboard/"
+    ), "OpenLLM name must start with 'open-llm-leaderboard/'"
+    post_details = openllm_name.split("open-llm-leaderboard/details_")[1]
+    creator, model = post_details.split("__")
+    hf_model_id = f"{creator}/{model}"
+    return hf_model_id
+
+
+def read_per_model_info(model_id, timestamp, scenario, cache_dir=CACHE_DIR):
+    # model_id = "meta-llama/Llama-2-13b-hf"
+    creator, model = tuple(model_id.split("/"))
+    model_details_id = "open-llm-leaderboard/details_{:}__{:}".format(
+        creator, model
+    )
+
+    # s = "harness_hendrycksTest_abstract_algebra_5"
+    s = scenario
+    aux = load_dataset(model_details_id, s, cache_dir=cache_dir)
+    print("Available timestamps:")
+    print(aux.keys())
+
+    # Attempt to create a table with all available columns.
+    latest_data = aux[timestamp]
+
+    # The structure may be a dict with lists as values, or list of dicts.
+    # We need to check what we have.
+
+    if isinstance(latest_data, dict):
+        # If values are lists of the same length, treat as column-wise.
+        lens = [len(v) for v in latest_data.values() if isinstance(v, list)]
+        if lens and all(l == lens[0] for l in lens):
+            # Looks like column-wise dict of lists.
+            df = pd.DataFrame(latest_data)
+        else:
+            # Dict where each key might be a scalar or something else.
+            df = pd.DataFrame([latest_data])
+    else:
+        # Try to coerce into DataFrame anyway
+        df = pd.DataFrame(latest_data)
+
+    # print(df)
+    return df
 
 
 # def get_embedder(model_name="BAAI/bge-large-en-v1.5"):

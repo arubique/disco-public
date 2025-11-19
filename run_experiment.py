@@ -318,7 +318,7 @@ def parse_arguments():
     return parser.parse_args()
 
 
-def choose_estimators(estimators_arg):
+def choose_estimators(estimators_arg, skip_embeddings=False):
     """
     Choose estimators and fitting methods based on the command line argument.
 
@@ -364,6 +364,8 @@ def choose_estimators(estimators_arg):
             elif only_estimator == "pirt":
                 chosen_estimators += ["naive"]
 
+            if not skip_embeddings:
+                chosen_estimators += ["mean_train_score", "perfect_knn"]
         else:
             chosen_estimators = [
                 e for e in ESTIMATORS if e in estimators or e in BASE_ESTIMATORS
@@ -383,7 +385,8 @@ def main():
 
     # Choose estimators and fitting methods
     chosen_estimators, chosen_fitting_methods = choose_estimators(
-        args.estimators
+        args.estimators,
+        skip_embeddings=args.skip_embeddings,
     )
 
     if args.results_table_path is None and args.make_results_table:

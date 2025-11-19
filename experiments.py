@@ -579,7 +579,8 @@ def evaluate_scenarios(
                 else None
             )
 
-            scenario = scenario_name
+            assert len(chosen_scenarios) == 1
+            scenario = chosen_scenarios[0]
             fitted_weights = make_or_load_from_cache(
                 object_name="fitted_weights",
                 object_config={

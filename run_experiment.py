@@ -126,6 +126,8 @@ def load_and_split_model_outputs(
     return_data_path=False,
     subsample_validation=False,
     bootstrap_ratio=0.9,
+    hard_split=False,
+    strongest_models_path=f"notebooks/data/mmlu_fields/strongest_models.pkl",
 ):
     if text_to_vector is not None:
         assert bench in ["helm_lite", "alpaca"]
@@ -154,7 +156,18 @@ def load_and_split_model_outputs(
             k = int(len(data["models"]) / 40)
             set_of_rows = [list(range(0, len(data["models"]), k))]
         else:
-            set_of_rows = [list(range(40))]
+            if hard_split:
+                assert strongest_models_path is not None
+                strongest_models = pd.read_pickle(strongest_models_path)
+
+                strongest_indices = [
+                    i
+                    for i, model in enumerate(data["models"])
+                    if model in strongest_models
+                ]
+                set_of_rows = [strongest_indices]
+            else:
+                set_of_rows = [list(range(40))]
             if "noniid@" in split:
                 apply_random_seed(split.split("@")[1])
                 test_models = set_of_rows[0]
@@ -315,6 +328,7 @@ def parse_arguments():
     parser.add_argument(
         "--skip_embeddings", action="store_true", help="skip embeddings"
     )
+    parser.add_argument("--hard_split", action="store_true", help="hard split")
     return parser.parse_args()
 
 
@@ -432,6 +446,7 @@ def main():
         return_data_path=True,
         subsample_validation=args.subsample_validation,
         bootstrap_ratio=args.bootstrap_ratio,
+        hard_split=args.hard_split,
     )
 
     chosen_scenarios = list(scenarios.keys())

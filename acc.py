@@ -642,6 +642,7 @@ def compute_acc_knn(
     train_model_embeddings,
     scenario,
     train_model_true_accs,
+    k=1,
 ):
     """
     Compute the accuracy of the KNN estimator.
@@ -652,10 +653,15 @@ def compute_acc_knn(
     )
 
     # Get index of most similar embedding
-    most_similar_idx = torch.argmax(similarities).item()
+    # most_similar_idx = torch.argmax(similarities).item()
+    most_similar_idx = torch.topk(similarities, k).indices
 
     # Return accuracy of most similar example
-    return train_model_true_accs[most_similar_idx][scenario]
+    # return train_model_true_accs[most_similar_idx][scenario]
+    accs = []
+    for idx in most_similar_idx:
+        accs.append(train_model_true_accs[idx.item()][scenario])
+    return np.array(accs).mean()
 
 
 def compute_perfect_knn(train_model_true_accs, test_model_true_acc, scenario):

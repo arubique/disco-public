@@ -20,6 +20,7 @@ from plots import (
     MAX_TABLE_SIZE,
     make_table_avg,
     make_perf_table,
+    patch_hardcoded_paths,
 )
 from utils import load_pickle
 from utils_for_notebooks import merge_methods
@@ -883,6 +884,7 @@ def extract_results_needed_for_tables(
                         bench_key = bench
 
                         results_path = f"{RESULTS_FOLDER}/accs_{bench_key}_split-{split}_iterations-5{filename_suffix}.pickle"
+                        results_path = patch_hardcoded_paths(results_path)
                         data = load_pickle(results_path)
 
                         (

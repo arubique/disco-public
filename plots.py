@@ -385,6 +385,16 @@ def winrate(x, axis):
     return np.argsort(np.argsort(x, axis=axis), axis=axis) / n
 
 
+def patch_hardcoded_paths(path):
+    if "noniid@" in path:
+        import re
+
+        match = re.search(r"noniid@\d+", path)
+        noniid_name = match.group(0) if match else None
+        path = path.replace("noniid_i", noniid_name + "_i")
+    return path
+
+
 def load_scores(
     bench,
     split,
@@ -396,8 +406,10 @@ def load_scores(
     filter_indices_by_results=True,
 ):
     if filter_indices_by_results:
+        accs_path = f"{RESULTS_FOLDER}/accs_{bench}_split-{split}_iterations-{num_it}{filename_suffix}.pickle"
+        accs_path = patch_hardcoded_paths(accs_path)
         with open(
-            f"{RESULTS_FOLDER}/accs_{bench}_split-{split}_iterations-{num_it}{filename_suffix}.pickle",
+            accs_path,
             "rb",
         ) as handle:
             data = pickle.load(handle)

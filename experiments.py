@@ -83,6 +83,7 @@ def evaluate_scenarios(
     skip_embeddings=False,
     # different_split_per_iteration=False,
     # bootstrap_ratio=0.9,
+    random_seed=42,
 ):
     """
     Evaluates scenarios by training and validating IRT models, then computing accuracies and updating results.
@@ -469,6 +470,7 @@ def evaluate_scenarios(
                                 balance_weights,
                                 disagreement_scores_dict,
                                 skip_irt,
+                                random_seed,
                             )
                             for number_item in number_items
                         ],

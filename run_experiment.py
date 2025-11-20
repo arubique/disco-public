@@ -494,6 +494,7 @@ def main():
         skip_it_fixed_sampling=(not args.do_not_skip_it_fixed_sampling),
         vary_selection=args.vary_selection,
         skip_embeddings=args.skip_embeddings,
+        random_seed=args.random_seed,
     )
 
     if args.cache_path is not None:

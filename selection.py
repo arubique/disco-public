@@ -619,6 +619,7 @@ def sample_items(
     balance_weights,
     disagreement_scores_dict,
     skip_irt=False,
+    random_seed=42,
 ):
     assert "adaptive" not in sampling_name
 
@@ -678,7 +679,7 @@ def sample_items(
                 subscenarios_position,
                 responses_test,
                 balance_weights,
-                random_seed=it,
+                random_seed=random_seed if iterations == 1 else it,
             )
 
         elif sampling_name == "anchor":

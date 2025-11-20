@@ -1,0 +1,42 @@
+{
+    "mmlu_fields": {
+        "iid": {
+            "ours": "_jsd_best_147",
+            "irt": "_jsd_best_147"
+        },
+        "noniid": {
+            "ours": "_jsd_best_148",
+            "irt": "_jsd_best_148"
+        }
+    },
+    "hellaswag": {
+        "iid": {
+            "ours": "_jsd_best_141",
+            "irt": "_jsd_best_141"
+        },
+        "noniid": {
+            "ours": "_jsd_best_142",
+            "irt": "_jsd_best_142"
+        }
+    },
+    "winogrande": {
+        "iid": {
+            "ours": "_jsd_best_138",
+            "irt": "_jsd_best_138"
+        },
+        "noniid": {
+            "ours": "_jsd_best_139",
+            "irt": "_jsd_best_139"
+        }
+    },
+    "arc": {
+        "iid": {
+            "ours": "_jsd_best_135",
+            "irt": "_jsd_best_135"
+        },
+        "noniid": {
+            "ours": "_jsd_best_136",
+            "irt": "_jsd_best_136"
+        }
+    }
+}

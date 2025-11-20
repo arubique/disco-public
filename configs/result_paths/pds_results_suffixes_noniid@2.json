@@ -1,0 +1,46 @@
+{
+    "mmlu_fields": {
+
+        "iid": {
+            "ours": "_disagreement_best_47",
+            "irt": "_disagreement_compare_with_irt43"
+        },
+        "noniid": {
+            "ours": "_disagreement_best_68_noniid@2",
+            "irt": "_disagreement_compare_with_irt70_noniid@2"
+        }
+    },
+    "hellaswag": {
+
+        "iid": {
+            "ours": "_disagreement_best_63",
+            "irt": "_disagreement_best_63"
+        },
+        "noniid": {
+            "ours": "_disagreement_best_64_noniid@2",
+            "irt": "_disagreement_best_64_noniid@2"
+        }
+    },
+    "winogrande": {
+
+        "iid": {
+            "ours": "_disagreement_best_130",
+            "irt": "_disagreement_best_130"
+        },
+        "noniid": {
+            "ours": "_disagreement_best_131_noniid@2",
+            "irt": "_disagreement_best_131_noniid@2"
+        }
+    },
+    "arc": {
+
+        "iid": {
+            "ours": "_disagreement_best_127",
+            "irt": "_disagreement_best_127"
+        },
+        "noniid": {
+            "ours": "_disagreement_best_128_noniid@2",
+            "irt": "_disagreement_best_128_noniid@2"
+        }
+    }
+}

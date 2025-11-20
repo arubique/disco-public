@@ -371,8 +371,11 @@ def choose_estimators(estimators_arg, skip_embeddings=False):
             chosen_fitting_methods = [
                 f for f in FITTING_METHODS if f[0] == only_estimator
             ]
-            if len(chosen_fitting_methods) == 0:
-                chosen_estimators = [only_estimator]
+            # if len(chosen_fitting_methods) == 0:
+            #     chosen_estimators = [only_estimator]
+            # else:
+            #     chosen_estimators = []
+            chosen_estimators = [only_estimator]
             if only_estimator == "gpirt":
                 chosen_estimators += ["naive", "pirt", "cirt"]
             elif only_estimator == "pirt":

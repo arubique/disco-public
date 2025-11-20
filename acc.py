@@ -527,18 +527,23 @@ def calculate_accuracies(
                                 sampling_name
                             ][number_item][it][j]
 
-                            # [ADD][new estimator] KNN
-                            knn_acc = compute_acc_knn(
-                                test_model_embedding=test_model_embedding,
-                                train_model_embeddings=train_models_embeddings[
-                                    sampling_name
-                                ][number_item][it],
-                                scenario=scenario,
-                                train_model_true_accs=train_model_true_accs,
-                            )
-                            accs[rows_to_hide[j]][number_item][
-                                sampling_name + "_KNN"
-                            ][scenario].append(knn_acc)
+                            if "KNN" in chosen_estimators:
+                                # [ADD][new estimator] KNN
+                                knn_acc = compute_acc_knn(
+                                    test_model_embedding=test_model_embedding,
+                                    train_model_embeddings=train_models_embeddings[
+                                        sampling_name
+                                    ][
+                                        number_item
+                                    ][
+                                        it
+                                    ],
+                                    scenario=scenario,
+                                    train_model_true_accs=train_model_true_accs,
+                                )
+                                accs[rows_to_hide[j]][number_item][
+                                    sampling_name + "_KNN"
+                                ][scenario].append(knn_acc)
 
                             # [ADD][new estimator] fitted weights
                             if (

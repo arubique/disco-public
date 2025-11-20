@@ -652,7 +652,7 @@ def process_table_data(
 
 
 def extract_results_needed_for_tables(
-    results_suffixes, return_only_df=False, target_df_dict=None
+    results_suffixes, return_only_df=False, target_df_dict=None, iterations=5
 ):
     def make_df_key(bench, split, agg_type):
         return f"{bench}_{split}_{agg_type}"
@@ -725,7 +725,7 @@ def extract_results_needed_for_tables(
                         table_std_dict[bench][factor] = {}
                         model_perf_dict[bench][factor] = {}
 
-                    results_path = f"{RESULTS_FOLDER}/accs_{real_bench}_split-{split}_iterations-5{filename_suffix}.pickle"
+                    results_path = f"{RESULTS_FOLDER}/accs_{real_bench}_split-{split}_iterations-{iterations}{filename_suffix}.pickle"
 
                     data = load_pickle(results_path)
 
@@ -883,7 +883,7 @@ def extract_results_needed_for_tables(
                         # real_bench is a keyword used for making paths, when debug real_bench can be copied from another benchmark
                         bench_key = bench
 
-                        results_path = f"{RESULTS_FOLDER}/accs_{bench_key}_split-{split}_iterations-5{filename_suffix}.pickle"
+                        results_path = f"{RESULTS_FOLDER}/accs_{bench_key}_split-{split}_iterations-{iterations}{filename_suffix}.pickle"
                         results_path = patch_hardcoded_paths(results_path)
                         data = load_pickle(results_path)
 
@@ -1032,6 +1032,12 @@ def main():
         default=None,
         help="Path to config file with result suffixes",
     )
+    parser.add_argument(
+        "--iterations",
+        type=int,
+        default=5,
+        help="Number of iterations",
+    )
     args = parser.parse_args()
 
     with open(args.source_config_path, "r") as f:
@@ -1060,7 +1066,9 @@ def main():
     # For example: "mmlu_fields_noniid_mae" or "hellaswag_iid_rank"
     if args.target_config_path is not None:
         target_df_dict = extract_results_needed_for_tables(
-            target_results_suffixes, return_only_df=True
+            target_results_suffixes,
+            return_only_df=True,
+            iterations=args.iterations,
         )
     else:
         target_df_dict = None

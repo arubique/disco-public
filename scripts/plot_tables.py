@@ -726,7 +726,11 @@ def extract_results_needed_for_tables(
                         model_perf_dict[bench][factor] = {}
 
                     results_path = f"{RESULTS_FOLDER}/accs_{real_bench}_split-{split}_iterations-{iterations}{filename_suffix}.pickle"
-
+                    if not os.path.exists(results_path):
+                        print(
+                            f" could not find results for results_path {results_path}, using default iterations 5"
+                        )
+                        results_path = f"{RESULTS_FOLDER}/accs_{real_bench}_split-{split}_iterations-5{filename_suffix}.pickle"
                     data = load_pickle(results_path)
 
                     (
@@ -885,6 +889,12 @@ def extract_results_needed_for_tables(
 
                         results_path = f"{RESULTS_FOLDER}/accs_{bench_key}_split-{split}_iterations-{iterations}{filename_suffix}.pickle"
                         results_path = patch_hardcoded_paths(results_path)
+                        if not os.path.exists(results_path):
+                            print(
+                                f" could not find results for results_path {results_path}, using default iterations 5"
+                            )
+                            results_path = f"{RESULTS_FOLDER}/accs_{bench_key}_split-{split}_iterations-5{filename_suffix}.pickle"
+                            results_path = patch_hardcoded_paths(results_path)
                         data = load_pickle(results_path)
 
                         (
@@ -1087,6 +1097,7 @@ def main():
         source_results_suffixes,
         return_only_df=False,
         target_df_dict=target_df_dict,
+        iterations=args.iterations,
     )
 
     table_1, latex_str = make_table_1(table_1_data)

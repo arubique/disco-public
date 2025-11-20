@@ -329,6 +329,9 @@ def parse_arguments():
         "--skip_embeddings", action="store_true", help="skip embeddings"
     )
     parser.add_argument("--hard_split", action="store_true", help="hard split")
+    parser.add_argument(
+        "--random_seed", type=int, help="random seed", default=RANDOM_SEED
+    )
     return parser.parse_args()
 
 
@@ -398,7 +401,7 @@ def main():
     # Parse command line arguments
     args = parse_arguments()
 
-    apply_random_seed(RANDOM_SEED)
+    apply_random_seed(args.random_seed)
 
     # Choose estimators and fitting methods
     chosen_estimators, chosen_fitting_methods = choose_estimators(

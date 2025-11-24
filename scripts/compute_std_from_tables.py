@@ -10,26 +10,26 @@ Seed = 0
          Approach                Type     # Samples        Type   MAE   Rank  \
 0        Approach        Condensation  Condensation  Prediction  Mmlu   Mmlu
 1                                type   num_anchors        type   mae   rank
-2        Baseline              Random           100        Eval  3.32  0.903
-3  tinyBenchmarks              Random           100      gp-IRT  2.57  0.912
-4  tinyBenchmarks          anchor-IRT           100      gp-IRT  2.69   0.93
-5  tinyBenchmarks  anchor-correctness           100      gp-IRT   1.9  0.918
-6        Baseline              Random           100         kNN  1.91    0.9
-7        Baseline              Random           100         fit  1.67  0.942
+2        Baseline              Random           100        Eval  3.55  0.906
+3  tinyBenchmarks              Random           100      gp-IRT  3.88  0.845
+4  tinyBenchmarks          anchor-IRT           100      gp-IRT  2.91  0.919
+5  tinyBenchmarks  anchor-correctness           100      gp-IRT  2.03  0.885
+6        Baseline              Random           100         kNN  2.19  0.883
+7        Baseline              Random           100         fit  1.81  0.901
 8    DISCO (ours)            High PDS           100         kNN  1.23  0.963
-9    DISCO (ours)            High PDS           100         fit  1.07  0.978
+9    DISCO (ours)            High PDS           100         fit  1.12  0.978
 
-         MAE       Rank         MAE        Rank   MAE   Rank
+
 0  Hellaswag  Hellaswag  Winogrande  Winogrande   Arc    Arc
 1        mae       rank         mae        rank   mae   rank
-2       2.83      0.821        3.62       0.802  2.62  0.882
-3        1.7      0.858        2.32       0.885   2.1  0.912
-4        2.1      0.828        3.88       0.721  4.71  0.788
-5       1.34      0.947        1.77        0.89  1.96  0.949
-6       1.57      0.885        1.68       0.911   2.4  0.898
-7       1.33      0.937        1.27       0.932  1.69  0.931
+2       4.03      0.753        3.27        0.56  2.41  0.902
+3       2.02      0.783         2.0       0.838   2.3  0.939
+4       2.18       0.86        3.29       0.663  4.71  0.794
+5       1.45       0.95        1.87       0.916  1.77   0.94
+6       1.99      0.883        1.69       0.912  2.23  0.924
+7        1.8      0.914         1.3       0.878  1.67  0.944
 8       1.33      0.934        1.19       0.942  2.06   0.93
-9       1.11      0.971        1.02       0.956  1.35  0.961
+9       1.07      0.972         1.0       0.968  1.32  0.958
 
 
 
@@ -38,26 +38,26 @@ seed = 1
          Approach                Type     # Samples        Type   MAE   Rank  \
 0        Approach        Condensation  Condensation  Prediction  Mmlu   Mmlu
 1                                type   num_anchors        type   mae   rank
-2        Baseline              Random           100        Eval  3.37  0.919
-3  tinyBenchmarks              Random           100      gp-IRT  2.61  0.925
-4  tinyBenchmarks          anchor-IRT           100      gp-IRT  3.08  0.915
-5  tinyBenchmarks  anchor-correctness           100      gp-IRT  2.13   0.92
-6        Baseline              Random           100         kNN  1.87  0.905
-7        Baseline              Random           100         fit  1.69  0.943
+2        Baseline              Random           100        Eval  2.59  0.948
+3  tinyBenchmarks              Random           100      gp-IRT  2.52   0.96
+4  tinyBenchmarks          anchor-IRT           100      gp-IRT  3.61  0.898
+5  tinyBenchmarks  anchor-correctness           100      gp-IRT  2.36  0.884
+6        Baseline              Random           100         kNN   1.8  0.932
+7        Baseline              Random           100         fit  1.71   0.97
 8    DISCO (ours)            High PDS           100         kNN  1.34  0.958
-9    DISCO (ours)            High PDS           100         fit  1.28  0.976
+9    DISCO (ours)            High PDS           100         fit   1.3  0.971
 
          MAE       Rank         MAE        Rank   MAE   Rank
 0  Hellaswag  Hellaswag  Winogrande  Winogrande   Arc    Arc
 1        mae       rank         mae        rank   mae   rank
-2       2.85      0.848        3.59       0.847  2.61  0.903
-3       1.69      0.863        1.68        0.94  2.13   0.93
-4       2.14      0.868        2.15        0.85  4.14  0.832
-5        1.4      0.959        2.14       0.925  2.55  0.948
-6       1.55      0.897        1.59       0.926  2.32  0.914
-7       1.33      0.941         1.3       0.938  1.72  0.943
+2       4.14      0.755        3.13       0.696  2.47  0.918
+3       2.01      0.781        1.91       0.929  2.33  0.943
+4       1.74      0.907        2.08       0.857  4.47  0.815
+5       1.51      0.948        2.11       0.934   2.0  0.963
+6       1.94      0.896        1.58        0.94  2.09  0.942
+7       1.79      0.943        1.31       0.884   1.6  0.957
 8       1.06      0.947        1.05       0.976  1.81  0.957
-9        0.9       0.98        0.91       0.968  1.44  0.974
+9       0.88      0.982        0.95       0.972  1.44  0.977
 
 
 seed = 2
@@ -65,79 +65,78 @@ seed = 2
          Approach                Type     # Samples        Type   MAE   Rank  \
 0        Approach        Condensation  Condensation  Prediction  Mmlu   Mmlu
 1                                type   num_anchors        type   mae   rank
-2        Baseline              Random           100        Eval  3.47  0.916
-3  tinyBenchmarks              Random           100      gp-IRT  2.63  0.921
-4  tinyBenchmarks          anchor-IRT           100      gp-IRT  2.92  0.921
-5  tinyBenchmarks  anchor-correctness           100      gp-IRT  1.88  0.928
-6        Baseline              Random           100         kNN  1.72  0.927
-7        Baseline              Random           100         fit  1.56  0.947
+2        Baseline              Random           100        Eval  2.34  0.947
+3  tinyBenchmarks              Random           100      gp-IRT  2.07  0.937
+4  tinyBenchmarks          anchor-IRT           100      gp-IRT  2.92  0.935
+5  tinyBenchmarks  anchor-correctness           100      gp-IRT  1.63  0.948
+6        Baseline              Random           100         kNN  2.36  0.865
+7        Baseline              Random           100         fit  1.73  0.936
 8    DISCO (ours)            High PDS           100         kNN  1.06   0.98
-9    DISCO (ours)            High PDS           100         fit  1.27  0.986
+9    DISCO (ours)            High PDS           100         fit  1.28  0.985
 
          MAE       Rank         MAE        Rank   MAE   Rank
 0  Hellaswag  Hellaswag  Winogrande  Winogrande   Arc    Arc
 1        mae       rank         mae        rank   mae   rank
-2       2.87       0.84        3.63       0.832  2.55  0.895
-3       1.69       0.87        1.73       0.935  2.24  0.922
-4       2.17      0.834        2.39       0.864  4.07   0.83
-5       1.35       0.96        2.31       0.904  2.33  0.954
-6       1.48      0.902        1.58       0.921  2.25  0.904
-7       1.24      0.958        1.27       0.941  1.76  0.925
+2       4.19      0.779        3.19       0.606  2.28  0.923
+3       1.94      0.815        1.81       0.911  2.39  0.946
+4        2.0       0.89        1.94       0.867  4.13  0.844
+5       1.47      0.952        2.21       0.919  2.43  0.944
+6       1.87      0.898        1.61       0.917  2.05  0.932
+7       1.69      0.951        1.35       0.889  1.57  0.948
 8       1.19      0.965        1.17       0.963   1.9  0.928
-9       1.08      0.974        0.91        0.97  1.47  0.966
+9        1.0      0.971        0.89       0.968  1.52  0.969
 
 seed = 3
 
-         Approach                Type     # Samples        Type   MAE   Rank  \
 0        Approach        Condensation  Condensation  Prediction  Mmlu   Mmlu
 1                                type   num_anchors        type   mae   rank
-2        Baseline              Random           100        Eval  3.41  0.921
-3  tinyBenchmarks              Random           100      gp-IRT  2.72  0.921
-4  tinyBenchmarks          anchor-IRT           100      gp-IRT  2.84  0.941
-5  tinyBenchmarks  anchor-correctness           100      gp-IRT  1.98  0.919
-6        Baseline              Random           100         kNN   1.9  0.905
-7        Baseline              Random           100         fit  1.92   0.93
+2        Baseline              Random           100        Eval  2.37  0.949
+3  tinyBenchmarks              Random           100      gp-IRT  2.11  0.946
+4  tinyBenchmarks          anchor-IRT           100      gp-IRT  3.07  0.934
+5  tinyBenchmarks  anchor-correctness           100      gp-IRT  1.83  0.943
+6        Baseline              Random           100         kNN  1.71  0.962
+7        Baseline              Random           100         fit  2.07  0.929
 8    DISCO (ours)            High PDS           100         kNN  1.36  0.978
-9    DISCO (ours)            High PDS           100         fit  1.23   0.98
+9    DISCO (ours)            High PDS           100         fit  1.23  0.981
 
          MAE       Rank         MAE        Rank   MAE   Rank
 0  Hellaswag  Hellaswag  Winogrande  Winogrande   Arc    Arc
 1        mae       rank         mae        rank   mae   rank
-2       2.86      0.836        3.67       0.838  2.57  0.909
-3       1.65      0.864        1.73       0.932  2.21  0.918
-4        2.2      0.825        2.51       0.861  4.18  0.841
-5       1.32      0.957        2.34       0.901  2.34  0.956
-6       1.59      0.903        1.63       0.923  2.44  0.896
-7       1.29       0.94        1.37       0.921  1.86  0.936
+2       4.11      0.779        3.15         0.7  2.37  0.927
+3       2.01      0.786        1.86       0.917   2.3  0.929
+4       2.37      0.805        2.67       0.852  4.24  0.824
+5       1.56      0.971         2.4       0.895   2.3  0.958
+6       1.99      0.892        1.67       0.928  2.22  0.924
+7       1.76      0.926        1.44       0.887  1.72  0.963
 8       1.62      0.959        1.15       0.947  2.07  0.933
-9        0.7      0.979        0.94       0.964   1.3  0.975
-
+9       0.68      0.977        0.92       0.969   1.3  0.978
 
 seed = 4
 
-         Approach                Type     # Samples        Type   MAE   Rank  \
 0        Approach        Condensation  Condensation  Prediction  Mmlu   Mmlu
 1                                type   num_anchors        type   mae   rank
-2        Baseline              Random           100        Eval  3.37    0.9
-3  tinyBenchmarks              Random           100      gp-IRT  2.57  0.905
-4  tinyBenchmarks          anchor-IRT           100      gp-IRT  2.92  0.896
-5  tinyBenchmarks  anchor-correctness           100      gp-IRT  1.98  0.917
-6        Baseline              Random           100         kNN  1.74  0.893
-7        Baseline              Random           100         fit  1.84  0.918
+2        Baseline              Random           100        Eval  4.11  0.888
+3  tinyBenchmarks              Random           100      gp-IRT  2.98  0.902
+4  tinyBenchmarks          anchor-IRT           100      gp-IRT  2.93   0.84
+5  tinyBenchmarks  anchor-correctness           100      gp-IRT  1.92  0.941
+6        Baseline              Random           100         kNN   1.7  0.922
+7        Baseline              Random           100         fit  2.11   0.89
 8    DISCO (ours)            High PDS           100         kNN  1.25  0.964
-9    DISCO (ours)            High PDS           100         fit  1.11  0.982
+9    DISCO (ours)            High PDS           100         fit   1.1  0.983
 
          MAE       Rank         MAE        Rank   MAE   Rank
 0  Hellaswag  Hellaswag  Winogrande  Winogrande   Arc    Arc
 1        mae       rank         mae        rank   mae   rank
-2       2.92      0.817        3.61       0.812  2.56  0.894
-3       1.58      0.853        1.64        0.92  2.12  0.905
-4       2.18      0.791        2.34       0.849  4.24  0.778
-5       1.13       0.96        2.14       0.887  1.72  0.964
-6       1.49       0.89        1.44       0.911  2.26  0.888
-7       1.12      0.936        1.19       0.921   1.6  0.937
+2       4.28      0.746        2.99       0.612  2.35  0.916
+3       1.94      0.763        1.88       0.897  2.29  0.916
+4       1.93      0.841        2.37       0.875  3.58  0.823
+5       0.96      0.967        1.83       0.935  1.69  0.977
+6       1.77      0.877        1.36       0.918  1.99  0.918
+7       1.63      0.914        1.26       0.888  1.34  0.957
 8       1.17       0.88        1.05       0.943  1.97  0.924
-9       0.79      0.976        0.92       0.967  1.33  0.976 """
+9       0.74       0.97        0.92       0.957  1.32  0.977
+
+"""
 
 # Split by seed blocks
 blocks = re.split(r"[Ss]eed\s*=\s*\d+", raw_text)

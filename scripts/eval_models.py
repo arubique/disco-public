@@ -39,23 +39,28 @@ def load_results():
         }
 
 
-def get_dataloader(resize_size=256, target_size=224):
-    val_transform = transforms.Compose(
-        [
-            transforms.Resize(resize_size),
-            transforms.CenterCrop(target_size),
-            transforms.ToTensor(),
-            transforms.Normalize(
-                mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
-            ),
-        ]
-    )
+def get_dataloader(
+    resize_size=256, target_size=224, transform=None, batch_size=BATCH_SIZE
+):
+    if transform is None:
+        val_transform = transforms.Compose(
+            [
+                transforms.Resize(resize_size),
+                transforms.CenterCrop(target_size),
+                transforms.ToTensor(),
+                transforms.Normalize(
+                    mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+                ),
+            ]
+        )
+    else:
+        val_transform = transform
     val_dataset = datasets.ImageFolder(
         IMAGENET_VAL_PATH, transform=val_transform
     )
     loader = DataLoader(
         val_dataset,
-        batch_size=BATCH_SIZE,
+        batch_size=batch_size,
         shuffle=False,
         num_workers=NUM_WORKERS,
     )
@@ -108,6 +113,9 @@ def main():
     # Initialize storage for intermediate results
     # If we have existing results, reconstruct the list from them
     all_results_list = []
+    all_model_names = []
+
+    model_names = results_dict.get("model_names", []) or []
     if (
         results_dict.get("all_correctness") is not None
         and results_dict.get("all_confidence") is not None
@@ -121,48 +129,61 @@ def main():
             all_results_list.append(combined)
 
     for model_entry in tqdm(model_catalog, desc="Evaluating models"):
-        non_standard_dataloader = None
         if isinstance(
             model_entry, dict
         ):  # If catalog is a list of dicts with 'name'
             model_name = model_entry.get("name", "")
         else:
             model_name = str(model_entry)
-            if "196" in model_name:
+
+        if not model_entry:
+            continue
+
+        if model_entry in model_names:
+            print(f"Skipping {model_entry}: already in results")
+            continue
+        non_standard_dataloader = None
+
+        if "196" in model_name:
+            non_standard_dataloader, non_standard_dataset = get_dataloader(
+                resize_size=256, target_size=196
+            )
+        elif "flexivit_" in model_name or "240" in model_name:
+            non_standard_dataloader, non_standard_dataset = get_dataloader(
+                resize_size=256, target_size=240
+            )
+        elif (
+            "sehalonet33ts" in model_name
+            or "eca_halonext26ts" in model_name in model_name
+            or "256" in model_name
+        ):
+            non_standard_dataloader, non_standard_dataset = get_dataloader(
+                resize_size=256, target_size=256
+            )
+        elif "336" in model_name:
+            non_standard_dataloader, non_standard_dataset = get_dataloader(
+                resize_size=512, target_size=336
+            )
+        elif "384" in model_name:
+            non_standard_dataloader, non_standard_dataset = get_dataloader(
+                resize_size=512, target_size=384
+            )
+        elif "448" in model_name:
+            non_standard_dataloader, non_standard_dataset = get_dataloader(
+                resize_size=512, target_size=448
+            )
+        elif "512" in model_name:
+            if "maxvit_large_tf_512" in model_name:
                 non_standard_dataloader, non_standard_dataset = get_dataloader(
-                    resize_size=256, target_size=196
+                    resize_size=512, target_size=512, batch_size=16
                 )
-            elif "flexivit_" in model_name or "240" in model_name:
-                non_standard_dataloader, non_standard_dataset = get_dataloader(
-                    resize_size=256, target_size=240
-                )
-            elif "sehalonet33ts" in model_name or "256" in model_name:
-                non_standard_dataloader, non_standard_dataset = get_dataloader(
-                    resize_size=256, target_size=256
-                )
-            elif "336" in model_name:
-                non_standard_dataloader, non_standard_dataset = get_dataloader(
-                    resize_size=512, target_size=336
-                )
-            elif "384" in model_name:
-                non_standard_dataloader, non_standard_dataset = get_dataloader(
-                    resize_size=512, target_size=384
-                )
-            elif "448" in model_name:
-                non_standard_dataloader, non_standard_dataset = get_dataloader(
-                    resize_size=512, target_size=448
-                )
-            elif "512" in model_name:
+            else:
                 non_standard_dataloader, non_standard_dataset = get_dataloader(
                     resize_size=512, target_size=512
                 )
 
-        if not model_name:
-            continue
-        model_names = results_dict.get("model_names", []) or []
-        if model_name in model_names:
-            print(f"Skipping {model_name}: already in results")
-            continue
+        all_model_names.append(model_name)
+
         try:
             print(f"Evaluating {model_name} ...")
             per_datapoint_results = eval_model_on_imagenet(

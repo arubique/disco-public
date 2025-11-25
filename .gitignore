@@ -1,4 +1,9 @@
 envs
+*cache*
+*.pkl
+*.pickle
+*.pdf
+*.csv
 data/
 data/lb.pickle
 data/mmlu_fields.pickle

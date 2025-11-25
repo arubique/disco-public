@@ -39,11 +39,11 @@ def load_results():
         }
 
 
-def get_dataloader():
+def get_dataloader(resize_size=256, target_size=224):
     val_transform = transforms.Compose(
         [
-            transforms.Resize(256),
-            transforms.CenterCrop(224),
+            transforms.Resize(resize_size),
+            transforms.CenterCrop(target_size),
             transforms.ToTensor(),
             transforms.Normalize(
                 mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
@@ -120,13 +120,43 @@ def main():
             combined = np.concatenate([all_correctness[i], all_confidence[i]])
             all_results_list.append(combined)
 
-    for model_entry in model_catalog:
+    for model_entry in tqdm(model_catalog, desc="Evaluating models"):
+        non_standard_dataloader = None
         if isinstance(
             model_entry, dict
         ):  # If catalog is a list of dicts with 'name'
             model_name = model_entry.get("name", "")
         else:
             model_name = str(model_entry)
+            if "196" in model_name:
+                non_standard_dataloader, non_standard_dataset = get_dataloader(
+                    resize_size=256, target_size=196
+                )
+            elif "flexivit_" in model_name or "240" in model_name:
+                non_standard_dataloader, non_standard_dataset = get_dataloader(
+                    resize_size=256, target_size=240
+                )
+            elif "sehalonet33ts" in model_name or "256" in model_name:
+                non_standard_dataloader, non_standard_dataset = get_dataloader(
+                    resize_size=256, target_size=256
+                )
+            elif "336" in model_name:
+                non_standard_dataloader, non_standard_dataset = get_dataloader(
+                    resize_size=512, target_size=336
+                )
+            elif "384" in model_name:
+                non_standard_dataloader, non_standard_dataset = get_dataloader(
+                    resize_size=512, target_size=384
+                )
+            elif "448" in model_name:
+                non_standard_dataloader, non_standard_dataset = get_dataloader(
+                    resize_size=512, target_size=448
+                )
+            elif "512" in model_name:
+                non_standard_dataloader, non_standard_dataset = get_dataloader(
+                    resize_size=512, target_size=512
+                )
+
         if not model_name:
             continue
         model_names = results_dict.get("model_names", []) or []
@@ -136,7 +166,14 @@ def main():
         try:
             print(f"Evaluating {model_name} ...")
             per_datapoint_results = eval_model_on_imagenet(
-                model_name, DEVICE, dataloader, dataset
+                model_name,
+                DEVICE,
+                dataloader
+                if non_standard_dataloader is None
+                else non_standard_dataloader,
+                dataset
+                if non_standard_dataloader is None
+                else non_standard_dataset,
             )
 
             # Add to results

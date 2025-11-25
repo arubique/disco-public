@@ -5,6 +5,20 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Eval Models on ImageNet",
+            "type": "python",
+            "request": "launch",
+            "program": "/home/oh/arubinstein17/github/disco-public/scripts/eval_models.py",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Compute Std from Tables",
+            "type": "python",
+            "request": "launch",
+            "program": "/home/oh/arubinstein17/github/disco-public/scripts/compute_std_from_tables.py",
+            "console": "integratedTerminal"
+        },
+        {
             "name": "Run Experiment (MMLU Fields PDS)",
             "type": "debugpy",
             "request": "launch",
@@ -13,27 +27,76 @@
             "args": [
                 "--bench",
                 "mmlu_fields",
+                "--random_seed",
+                "0",
                 "--device",
                 "cuda",
                 "--disagreement_type",
                 "pds",
+                "--number_items",
+                "100",
                 "--estimators",
-                "best",
+                // "RandomForestRegressor_100",
+                // "only@RandomForestRegressor_100",
+                "naive,gpirt",
+                // "only@KNN",
+                // "only@naive",
+                // "only@gpirt",
+                // "best",
                 "--filename_suffix",
-                "_disagreement_best_47",
+                // "_disagreement_best_47",
+                "_debug_hard_split_measure_time",
+                "--cache_path",
+                "./cache/cache_debug_rigor_v1.pickle",
                 "--iterations",
-                "5",
+                // "5",
+                "1",
                 "--num_workers",
                 "4",
                 "--pca",
                 "256",
                 "--sampling_names",
-                "random,high-disagreement,low-disagreement,low-disagreement@2,high-disagreement@2,low-disagreement@10,high-disagreement@10,low-disagreement@100,high-disagreement@100,high-disagreement+nonstratified,low-disagreement+nonstratified,low-disagreement@2+nonstratified,high-disagreement@2+nonstratified,low-disagreement@10+nonstratified,high-disagreement@10+nonstratified,low-disagreement@100+nonstratified,high-disagreement@100+nonstratified",
+                // "random,high-disagreement@2",
+                // "high-disagreement@2",
+                "random",
+                // "anchor-irt",
                 "--split",
-                "iid",
-                "--skip_irt",
-                "--make_results_table"
+                "noniid@2",
+                // "--skip_irt",
+                "--make_results_table",
+                // "--vary_selection",
+                // "--different_split_per_iteration",
+                // "--do_not_skip_it_fixed_sampling",
+                // "--bootstrap_ratio",
+                // "0.9",
+                // "--skip_embeddings",
+                // "--hard_split",
             ],
+            "env": {
+                "PROJECT_ROOT_PROVIDED_FOR_STUNED": "."
+            }
+        },
+        {
+            "name": "Estimate LLM Inference Time",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "/home/oh/arubinstein17/github/disco-public/scripts/estimate_llm_inference_time.py",
+            "args": [
+                // "--model_id",
+                // "meta-math/MetaMath-70B-V1.0",
+                // "--subset",
+                // "harness_hendrycksTest_abstract_algebra_5",
+                // "--num_questions",
+                // "100",
+                "--full-eval",
+                // "--scenario",
+                // "abstract_algebra"
+                "--max-new-tokens",
+                "1024",
+                "--openllm-scenarios",
+                "harness_arc_challenge_25"
+            ],
+            "console": "integratedTerminal"
         },
         {
             "name": "Extract Model Outputs",
@@ -50,9 +113,26 @@
             "console": "integratedTerminal",
             "args": [
                 "--source_config_path",
-                "./configs/result_paths/pds_results_suffixes.json"
+                // "./configs/result_paths/pds_results_suffixes.json",
+                // "./configs/result_paths/jsd_results_suffixes.json",
+                // "./configs/result_paths/pds_results_suffixes_noniid@2.json",
+                // "./configs/result_paths/pds_results_suffixes_noniid@3.json",
+                // "./configs/result_paths/pds_results_suffixes_noniid@4.json",
+                // "./configs/result_paths/pds_results_suffixes_noniid@5.json",
+                // "./configs/result_paths/pds_results_suffixes_noniid@6.json",
+                // "./configs/result_paths/pds_results_suffixes_nonzerostd.json",
+                "./configs/result_paths/pds_hard_results_suffixes_noniid@22.json",
+                // "--target_config_path",
+                // "./configs/result_paths/pds_results_suffixes.json",
+                // "./configs/result_paths/jsd_results_suffixes.json",
+                // "./configs/result_paths/pds_results_suffixes_nonzerostd.json",
+                // "./configs/result_paths/pds_hard_results_suffixes_noniid@22.json"
+                "--iterations",
+                "1",
             ]
         },
+        // accs_mmlu_fields_split-noniid@2_iterations-1_disagreement_best_68_noniid@2.pickle
+        // /weka/oh/arubinstein17/github/disco-public/results/accs_mmlu_fields_split-noniid_iterations-1_disagreement_best_68_noniid@2.pickle
         {
             "name": "Download Model Outputs",
             "type": "debugpy",

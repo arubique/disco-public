@@ -404,6 +404,7 @@ def load_scores(
     num_it=5,
     data_path=None,
     filter_indices_by_results=True,
+    subsampled_models_indices=None,
 ):
     if filter_indices_by_results:
         accs_path = f"{RESULTS_FOLDER}/accs_{bench}_split-{split}_iterations-{num_it}{filename_suffix}.pickle"
@@ -504,6 +505,7 @@ def load_scores(
 
     scores = balance_weights * scores
 
+    # shape (#models,) before any subsampling
     scores = np.vstack(
         [
             scores[:, scenarios_position[scenario]].mean(axis=1)
@@ -511,10 +513,15 @@ def load_scores(
         ]
     )
 
+    if subsampled_models_indices is not None:
+        test_indices, train_indices = subsampled_models_indices
+        scores = scores[:, test_indices + train_indices]
+
     if filter_indices_by_results:
         scores = scores[:, list(data.keys())]
     else:
         scores = scores
+
     return scores
 
 
@@ -530,6 +537,7 @@ def make_table_avg(
     num_it=5,
     data_path=None,
     std_across_models=True,
+    subsampled_models_indices=None,
 ):
     table_avg = {}
     table_std = {}
@@ -602,6 +610,7 @@ def make_table_avg(
         filename_suffix=filename_suffix,
         num_it=num_it,
         data_path=data_path,
+        subsampled_models_indices=subsampled_models_indices,
     )
 
     if agg == "leaderboard":

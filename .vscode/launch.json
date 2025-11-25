@@ -54,7 +54,7 @@
                 "--num_workers",
                 "4",
                 "--pca",
-                "256",
+                "128",
                 "--sampling_names",
                 // "random,high-disagreement@2",
                 // "high-disagreement@2",
@@ -62,7 +62,7 @@
                 // "anchor-irt",
                 "--split",
                 "noniid@2",
-                // "--skip_irt",
+                "--skip_irt",
                 "--make_results_table",
                 // "--vary_selection",
                 // "--different_split_per_iteration",
@@ -71,6 +71,8 @@
                 // "0.9",
                 // "--skip_embeddings",
                 // "--hard_split",
+                "--split_type",
+                "strongest_last_30_percent",
             ],
             "env": {
                 "PROJECT_ROOT_PROVIDED_FOR_STUNED": "."

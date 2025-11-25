@@ -34,6 +34,13 @@ import json
 
 SCENARIOS_TO_SKIP = ["harness_gsm8k_5"]
 
+STRONGEST_LAST_30_PERCENT_MODELS_PATH = (
+    f"notebooks/data/mmlu_fields/strongest_last_30_percent_models.pkl"
+)
+WEAKEST_50_PERCENT_MODELS_PATH = (
+    f"notebooks/data/mmlu_fields/weakest_50_percent_models.pkl"
+)
+
 
 def validate_sampling_names(sampling_names_str):
     """
@@ -118,6 +125,41 @@ def load_estimators_and_fitting_methods(config_path):
     return chosen_estimators, chosen_fitting_methods
 
 
+def subsample_models(
+    data, train_indices, test_indices, subsampled_models_indices=None
+):
+    # data['data']['harness_hendrycksTest_world_religions_5']['correctness'].shape
+    if subsampled_models_indices is None:
+        subsampled_models_indices = (test_indices, train_indices)
+    else:
+        # if indices have been subsampled before, we need to compute subsampled indices wrt original indices
+        (
+            subsampled_models_indices_test,
+            subsampled_models_indices_train,
+        ) = subsampled_models_indices
+        original_indices = (
+            subsampled_models_indices_test + subsampled_models_indices_train
+        )
+
+        subsampled_models_indices = (
+            [original_indices[i] for i in test_indices],
+            [original_indices[i] for i in train_indices],
+        )
+
+    subsampled_indices = test_indices + train_indices
+    data["models"] = [data["models"][i] for i in subsampled_indices]
+    for subscenario, subscenario_value in data["data"].items():
+        for output_type, output_value in subscenario_value.items():
+            data["data"][subscenario][output_type] = output_value[
+                :, subsampled_indices
+            ]
+    # data['data'] = {k: v for k, v in data['data'].items() if k in test_indices + train_indices}
+
+    # first #test_models indices
+    set_of_rows = [list(range(len(test_indices)))]
+    return data, set_of_rows, subsampled_models_indices
+
+
 def load_and_split_model_outputs(
     bench,
     split,
@@ -128,9 +170,14 @@ def load_and_split_model_outputs(
     bootstrap_ratio=0.9,
     hard_split=False,
     strongest_models_path=f"notebooks/data/mmlu_fields/strongest_models.pkl",
+    split_type=None,
+    return_subsampled_models_indices=False,
 ):
     if text_to_vector is not None:
         assert bench in ["helm_lite", "alpaca"]
+
+    if hard_split:
+        assert split_type is None
 
     # Loading data
     if bench in [
@@ -151,6 +198,8 @@ def load_and_split_model_outputs(
         # scenarios = {'mmlu':scenarios['mmlu']}
         scenarios = {scenario_key: scenarios[scenario_key]}
 
+        subsampled_models_indices = None
+
         # split
         if split == "iid":
             k = int(len(data["models"]) / 40)
@@ -166,8 +215,43 @@ def load_and_split_model_outputs(
                     if model in strongest_models
                 ]
                 set_of_rows = [strongest_indices]
+            elif split_type == "strongest_last_30_percent":
+                strongest_last_30_percent_models = pd.read_pickle(
+                    STRONGEST_LAST_30_PERCENT_MODELS_PATH
+                )
+                strongest_last_30_percent_indices = [
+                    i
+                    for i, model in enumerate(data["models"])
+                    if model in strongest_last_30_percent_models
+                ]
+                set_of_rows = [strongest_last_30_percent_indices]
+                weakest_50_percent_models = pd.read_pickle(
+                    WEAKEST_50_PERCENT_MODELS_PATH
+                )
+                weakest_50_percent_indices = [
+                    i
+                    for i, model in enumerate(data["models"])
+                    if model in weakest_50_percent_models
+                ]
+
+                # data['data']['harness_hendrycksTest_world_religions_5']['correctness'].shape
+
+                # # Create new data where first we have strongest models, then weakest models
+                # combined_indices = strongest_last_30_percent_indices + weakest_50_percent_indices
+                # # Reorder data["models"] accordingly
+                # data["models"] = [data["models"][i] for i in combined_indices]
+                # # Update set_of_rows as the indices corresponding to strongest models (now at the start)
+                # set_of_rows = [list(range(len(strongest_last_30_percent_indices)))]
+                data, set_of_rows, subsampled_models_indices = subsample_models(
+                    data,
+                    train_indices=weakest_50_percent_indices,
+                    test_indices=strongest_last_30_percent_indices,
+                    subsampled_models_indices=subsampled_models_indices,
+                )
             else:
                 set_of_rows = [list(range(40))]
+
+            # bootstrapping
             if "noniid@" in split:
                 apply_random_seed(split.split("@")[1])
                 test_models = set_of_rows[0]
@@ -185,18 +269,30 @@ def load_and_split_model_outputs(
                     for model_idx in list(range(total_models))
                     if model_idx not in test_models
                 ]
-                subsampled_train_models = [
-                    model_idx
-                    for model_idx in list(range(total_models))
-                    if model_idx not in subsampled_test_models
-                ]
-                set_of_rows = [subsampled_test_models]
-                subsampled_models = [
-                    data["models"][i]
-                    for i in data["models"]
-                    if i in subsampled_train_models + subsampled_test_models
-                ]
-                data["models"] = subsampled_models
+                # subsampled_train_models = [
+                #     model_idx
+                #     for model_idx in list(range(total_models))
+                #     if model_idx not in subsampled_test_models
+                # ]
+                subsample_train_size = int(bootstrap_ratio * len(train_models))
+                subsampled_train_models = np.random.choice(
+                    train_models,
+                    size=subsample_train_size,
+                    replace=False,
+                ).tolist()
+                # set_of_rows = [subsampled_test_models]
+                # subsampled_models = [
+                #     data["models"][i]
+                #     for i in data["models"]
+                #     if i in subsampled_train_models + subsampled_test_models
+                # ]
+                # data["models"] = subsampled_models
+                data, set_of_rows, subsampled_models_indices = subsample_models(
+                    data,
+                    train_indices=subsampled_train_models,
+                    test_indices=subsampled_test_models,
+                    subsampled_models_indices=subsampled_models_indices,
+                )
 
         print(len(set_of_rows[0]), len(data["models"]))
 
@@ -220,14 +316,28 @@ def load_and_split_model_outputs(
         else:
             assert split == "noniid"
             val_models = train_models[: len(test_models)]
-        data["models"] = [
-            data["models"][i] for i in train_models
-        ]  # remove test models
-        set_of_rows = [val_models]
+        # data["models"] = [
+        #     data["models"][i] for i in train_models
+        # ]  # remove test models
+        # set_of_rows = [val_models]
+        data, set_of_rows, subsampled_models_indices = subsample_models(
+            data,
+            train_indices=train_models,
+            test_indices=val_models,
+            subsampled_models_indices=subsampled_models_indices,
+        )
 
     res = [data, scenarios, set_of_rows]
     if return_data_path:
         res += [model_outputs_path]
+
+    if return_subsampled_models_indices:
+        assert return_data_path is True
+        res += [subsampled_models_indices]
+
+    assert (
+        data["data"]["harness_hendrycksTest_world_religions_5"]["correctness"]
+    ).shape[1] == len(data["models"])
     return res
 
 
@@ -329,6 +439,9 @@ def parse_arguments():
         "--skip_embeddings", action="store_true", help="skip embeddings"
     )
     parser.add_argument("--hard_split", action="store_true", help="hard split")
+    parser.add_argument(
+        "--split_type", type=str, help="split type", default=None
+    )
     parser.add_argument(
         "--random_seed", type=int, help="random seed", default=RANDOM_SEED
     )
@@ -444,7 +557,13 @@ def main():
 
     scenario_name = "full"  # we are evaluating all scenarios at once (this is just a nomination)
 
-    data, scenarios, set_of_rows, data_path = load_and_split_model_outputs(
+    (
+        data,
+        scenarios,
+        set_of_rows,
+        data_path,
+        subsampled_models_indices,
+    ) = load_and_split_model_outputs(
         bench,
         split,
         model_outputs_path=args.model_outputs_path,
@@ -453,6 +572,8 @@ def main():
         subsample_validation=args.subsample_validation,
         bootstrap_ratio=args.bootstrap_ratio,
         hard_split=args.hard_split,
+        split_type=args.split_type,
+        return_subsampled_models_indices=True,
     )
 
     chosen_scenarios = list(scenarios.keys())
@@ -525,6 +646,7 @@ def main():
             scenarios_to_skip=SCENARIOS_TO_SKIP,
             num_it=iterations,
             data_path=data_path,
+            subsampled_models_indices=subsampled_models_indices,
         )
         make_results_table(
             table_avg,

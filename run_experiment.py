@@ -638,6 +638,17 @@ def main():
         pickle.dump(sampling_time_dic, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     if args.make_results_table:
+        if subsampled_models_indices is not None:
+            subsampled_models_indices_path = f"subsampled_models_indices/subsampled_models_indices_{filename_suffix}.pickle"
+            os.makedirs(
+                os.path.dirname(subsampled_models_indices_path), exist_ok=True
+            )
+            with open(subsampled_models_indices_path, "wb") as handle:
+                pickle.dump(
+                    subsampled_models_indices,
+                    handle,
+                    protocol=pickle.HIGHEST_PROTOCOL,
+                )
         table_avg, table_std = make_table_avg(
             bench,
             split,

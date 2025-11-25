@@ -123,12 +123,14 @@
                 // "./configs/result_paths/pds_results_suffixes_noniid@5.json",
                 // "./configs/result_paths/pds_results_suffixes_noniid@6.json",
                 // "./configs/result_paths/pds_results_suffixes_nonzerostd.json",
-                "./configs/result_paths/pds_hard_results_suffixes_noniid@22.json",
-                // "--target_config_path",
+                // "./configs/result_paths/pds_hard_results_suffixes_noniid@22.json",
+                "./configs/result_paths/pds_hard_v2_results_suffixes_noniid@222.json",
+                "--target_config_path",
                 // "./configs/result_paths/pds_results_suffixes.json",
                 // "./configs/result_paths/jsd_results_suffixes.json",
                 // "./configs/result_paths/pds_results_suffixes_nonzerostd.json",
                 // "./configs/result_paths/pds_hard_results_suffixes_noniid@22.json"
+                "./configs/result_paths/pds_hard_v2_results_suffixes_noniid@222.json",
                 "--iterations",
                 "1",
             ]

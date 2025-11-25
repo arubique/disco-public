@@ -155,6 +155,7 @@ def main():
         elif (
             "sehalonet33ts" in model_name
             or "eca_halonext26ts" in model_name in model_name
+            or "bat_resnext26ts" in model_name
             or "256" in model_name
         ):
             non_standard_dataloader, non_standard_dataset = get_dataloader(

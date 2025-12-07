@@ -633,7 +633,13 @@ def process_table_data(
     table_std_base,
     model_perf_base,
     std_across_models=False,
+    load_indices=None,
+    main_split="noniid",
 ):
+    if load_indices is not None:
+        subsampled_models_indices = load_pickle(load_indices)
+    else:
+        subsampled_models_indices = None
     current_table_avg, current_table_std, current_model_perf = make_table_avg(
         bench,
         split,
@@ -644,6 +650,7 @@ def process_table_data(
         return_perf_table=True,
         agg_type=agg_type,
         std_across_models=std_across_models,
+        subsampled_models_indices=subsampled_models_indices,
     )
     table_avg_base = merge_methods(table_avg_base, current_table_avg)
     table_std_base = merge_methods(table_std_base, current_table_std)
@@ -652,7 +659,12 @@ def process_table_data(
 
 
 def extract_results_needed_for_tables(
-    results_suffixes, return_only_df=False, target_df_dict=None, iterations=5
+    results_suffixes,
+    return_only_df=False,
+    target_df_dict=None,
+    iterations=5,
+    load_indices=None,
+    main_split="noniid",
 ):
     def make_df_key(bench, split, agg_type):
         return f"{bench}_{split}_{agg_type}"
@@ -749,6 +761,9 @@ def extract_results_needed_for_tables(
                         table_std_base,
                         model_perf_base,
                         std_across_models=False,
+                        load_indices=load_indices
+                        if split == main_split and bench == "mmlu_fields"
+                        else None,  # hardcoded for now - we provide indices only for noniid split and mmlu_fields benchmark
                     )
 
                     table_avg_dict[bench][agg_type][factor] = table_avg_base
@@ -913,13 +928,16 @@ def extract_results_needed_for_tables(
                             table_std_base,
                             model_perf_base,
                             std_across_models=False,
+                            load_indices=load_indices
+                            if split == main_split and bench == "mmlu_fields"
+                            else None,  # hardcoded for now - we provide indices only for noniid split and mmlu_fields benchmark
                         )
 
                     table_avg_dict[bench][agg_type][split] = table_avg_base
                     table_std_dict[bench][agg_type][split] = table_std_base
                     model_perf_dict[bench][agg_type][split] = model_perf_base
 
-                    if split == "noniid":
+                    if split == main_split:
                         if df_num_anchors is None:
                             df_num_anchors = {}
                         cur_df_num_anchors = make_df_with_results(
@@ -1048,6 +1066,18 @@ def main():
         default=5,
         help="Number of iterations",
     )
+    parser.add_argument(
+        "--load-indices",
+        type=str,
+        default=None,
+        help="Path to pickle file with subsampled models indices",
+    )
+    parser.add_argument(
+        "--main_split",
+        type=str,
+        default="noniid",
+        help="Main split to use for extraction",
+    )
     args = parser.parse_args()
 
     with open(args.source_config_path, "r") as f:
@@ -1079,6 +1109,8 @@ def main():
             target_results_suffixes,
             return_only_df=True,
             iterations=args.iterations,
+            load_indices=args.load_indices,
+            main_split=args.main_split,
         )
     else:
         target_df_dict = None
@@ -1098,6 +1130,8 @@ def main():
         return_only_df=False,
         target_df_dict=target_df_dict,
         iterations=args.iterations,
+        load_indices=args.load_indices,
+        main_split=args.main_split,
     )
 
     table_1, latex_str = make_table_1(table_1_data)

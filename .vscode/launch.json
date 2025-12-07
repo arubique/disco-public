@@ -115,7 +115,7 @@
             "console": "integratedTerminal",
             "args": [
                 "--source_config_path",
-                // "./configs/result_paths/pds_results_suffixes.json",
+                "./configs/result_paths/pds_results_suffixes.json",
                 // "./configs/result_paths/jsd_results_suffixes.json",
                 // "./configs/result_paths/pds_results_suffixes_noniid@2.json",
                 // "./configs/result_paths/pds_results_suffixes_noniid@3.json",
@@ -124,15 +124,23 @@
                 // "./configs/result_paths/pds_results_suffixes_noniid@6.json",
                 // "./configs/result_paths/pds_results_suffixes_nonzerostd.json",
                 // "./configs/result_paths/pds_hard_results_suffixes_noniid@22.json",
-                "./configs/result_paths/pds_hard_v2_results_suffixes_noniid@222.json",
+                // "./configs/result_paths/pds_hard_v2_results_suffixes_noniid@222.json",
+                "--main_split",
+                "iid",
                 "--target_config_path",
-                // "./configs/result_paths/pds_results_suffixes.json",
+                "./configs/result_paths/pds_results_suffixes.json",
                 // "./configs/result_paths/jsd_results_suffixes.json",
                 // "./configs/result_paths/pds_results_suffixes_nonzerostd.json",
                 // "./configs/result_paths/pds_hard_results_suffixes_noniid@22.json"
-                "./configs/result_paths/pds_hard_v2_results_suffixes_noniid@222.json",
+                // "./configs/result_paths/pds_hard_v2_results_suffixes_noniid@222.json",
+                // "./configs/result_paths/pds_results_suffixes_iid.json",
                 "--iterations",
                 "1",
+                // "--load-indices",
+                // "/home/oh/arubinstein17/github/disco-public/subsampled_models_indices/subsampled_models_indices__disagreement_compare_with_irt70_noniid@222.pickle",
+                // "/home/oh/arubinstein17/github/disco-public/subsampled_models_indices/subsampled_models_indices__disagreement_compare_with_irt70_noniid@222.pickle"
+
+
             ]
         },
         // accs_mmlu_fields_split-noniid@2_iterations-1_disagreement_best_68_noniid@2.pickle

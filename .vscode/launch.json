@@ -5,6 +5,13 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Run 2 Stages",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "/home/oh/arubinstein17/github/disco-public/scripts/2stages.py",
+            "console": "integratedTerminal"
+        },
+        {
             "name": "Run Experiment (MMLU Fields PDS)",
             "type": "debugpy",
             "request": "launch",

@@ -34,6 +34,69 @@ from scripts.evaluate_mmlu import evaluate_mmlu
 sys.path.pop(0)
 
 
+def sample_items_v2(
+    number_item,
+    iterations,
+    sampling_name,
+    source_outputs,
+    target_model_count,
+    chosen_scenarios,
+    scenarios,
+    subscenarios_position,
+    scenarios_position,
+    balance_weights,
+):
+    """
+    Convenience wrapper to sample items without using target_outputs.
+    Only source_outputs plus metadata are used; target_model_count provides the test-set size.
+    """
+    predictions_train = source_outputs["predictions"]
+    scores_train = source_outputs["correctness"][:, :, 0]
+
+    # responses_test is only used for shape; fill zeros with correct shape
+    responses_test = np.zeros((target_model_count, scores_train.shape[1]))
+
+    disagreement_scores_dict = make_disagreement_scores_dict(
+        config={
+            "sampling_names": [sampling_name],
+            "predictions_train": predictions_train,
+            "disagreement_type": "pds",
+        }
+    )
+
+    return sample_items(
+        number_item,
+        iterations,
+        sampling_name,
+        chosen_scenarios,
+        scenarios,
+        subscenarios_position,
+        responses_test=responses_test,
+        scores_train=scores_train,
+        predictions_train=predictions_train,
+        scenarios_position=scenarios_position,
+        A=None,
+        B=None,
+        balance_weights=balance_weights,
+        disagreement_scores_dict=disagreement_scores_dict,
+        skip_irt=True,
+    )[:2]
+
+
+def _structures_equal(a, b):
+    if isinstance(a, np.ndarray) or isinstance(b, np.ndarray):
+        return np.array_equal(a, b)
+    if isinstance(a, list) and isinstance(b, list):
+        return len(a) == len(b) and all(
+            _structures_equal(x, y) for x, y in zip(a, b)
+        )
+    if isinstance(a, dict) and isinstance(b, dict):
+        return a.keys() == b.keys() and all(
+            _structures_equal(a[k], b[k]) for k in a.keys()
+        )
+    return a == b
+
+
 def load_or_make_outputs(target_cache_path, source_cache_path, save=False):
     """
     Load target/source outputs from disk if available; otherwise build from data and save.
@@ -165,7 +228,7 @@ def main():
     )
 
     number_items = [100]
-    iterations = 5
+    iterations = 1
     sampling_name = sampling_names[0]
     number_item = number_items[0]
     seen_items_dic = {sampling_name: {}}
@@ -187,7 +250,32 @@ def main():
         disagreement_scores_dict=disagreement_scores_dict,
         skip_irt=True,
     )
-    (_, seen_items_dic[sampling_name][number_item], _, _) = samples
+    (
+        item_weights_old,
+        seen_items_dic[sampling_name][number_item],
+        _,
+        _,
+    ) = samples
+
+    samples_v2 = sample_items_v2(
+        number_item=number_item,
+        iterations=iterations,
+        sampling_name=sampling_name,
+        source_outputs=source_outputs,
+        target_model_count=len(rows_to_hide),
+        chosen_scenarios=chosen_scenarios,
+        scenarios=scenarios,
+        subscenarios_position=subscenarios_position,
+        scenarios_position=scenarios_position,
+        balance_weights=balance_weights,
+    )
+    item_weights_new, seen_items_new = samples_v2
+    assert _structures_equal(
+        item_weights_old, item_weights_new
+    ), "item_weights differ"
+    assert _structures_equal(
+        seen_items_dic[sampling_name][number_item], seen_items_new
+    ), "seen_items differ"
 
     # load embeddings
     # cache_path = ""

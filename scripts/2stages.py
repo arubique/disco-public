@@ -17,7 +17,14 @@ from experiments import (
     make_disagreement_scores_dict,
     make_fitted_weights,
 )
-from utils import lb_scenarios, dump_pickle, load_pickle, prepare_and_split_data
+from utils import (
+    lb_scenarios,
+    dump_pickle,
+    load_pickle,
+    prepare_and_split_data,
+    create_predictions,
+    create_responses,
+)
 from plots import MODEL_OUTPUTS_PATH, load_scores, safe_spearmanr
 from selection import sample_items
 from run_experiment import load_and_split_model_outputs
@@ -37,6 +44,40 @@ def main():
         return_data_path=True,
         subsample_validation=False,
     )
+
+    # Build target/source outputs dicts from the loaded data (before any filtering)
+    chosen_scenarios = list(scenarios.keys())
+    all_predictions = create_predictions(chosen_scenarios, scenarios, data)
+    all_correctness = create_responses(chosen_scenarios, scenarios, data)[
+        :, :, None
+    ]  # add trailing dim (N, Q, 1)
+
+    def build_outputs_dict(model_indices):
+        preds = all_predictions[model_indices]
+        corr = all_correctness[model_indices]
+        # map original model name to its index within the subset tensors
+        models_map = {
+            data["models"][orig_idx]: local_idx
+            for local_idx, orig_idx in enumerate(model_indices)
+        }
+        # datapoint ids align with column order in preds/corr
+        datapoints_map = {dp_idx: dp_idx for dp_idx in range(preds.shape[1])}
+        return {
+            "predictions": preds,
+            "correctness": corr,
+            "Models": models_map,
+            "Datapoints": datapoints_map,
+        }
+
+    target_model_indices = set_of_rows[0]
+    source_model_indices = [
+        i
+        for i in range(all_predictions.shape[0])
+        if i not in target_model_indices
+    ]
+
+    target_outputs = build_outputs_dict(target_model_indices)
+    source_outputs = build_outputs_dict(source_model_indices)
 
     chosen_scenarios = list(scenarios.keys())
     split_number = 0

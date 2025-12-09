@@ -35,6 +35,28 @@ from scripts.evaluate_mmlu import evaluate_mmlu
 sys.path.pop(0)
 
 SAMPLING_ITERATIONS = None
+DEFAULT_SCENARIO = "all"
+
+
+def derive_scenario_metadata(
+    source_outputs, chosen_scenarios=[DEFAULT_SCENARIO]
+):
+    # if chosen_scenarios is None:
+    #     chosen_scenarios = [DEFAULT_SCENARIO]
+
+    # scenarios = {chosen_scenarios[0]: [DEFAULT_SCENARIO]}
+    # scenarios_position = {DEFAULT_SCENARIO: list(range(scores_train.shape[1]))}
+    # subscenarios_position = {DEFAULT_SCENARIO: {DEFAULT_SCENARIO: list(range(scores_train.shape[1]))}}
+    # if "Scenarios" in source_outputs:
+    assert len(chosen_scenarios) == 1
+    main_scenario = chosen_scenarios[0]
+    subscenarios_position = {main_scenario: {}}
+    scenarios = {main_scenario: []}
+    for scenario_name, positions in source_outputs["Scenarios"].items():
+        subscenarios_position[main_scenario][scenario_name] = list(positions)
+        scenarios[main_scenario].append(scenario_name)
+    # scenarios_position = None
+    return scenarios, chosen_scenarios, subscenarios_position
 
 
 def sample_items_v2(
@@ -43,10 +65,7 @@ def sample_items_v2(
     sampling_name,
     source_outputs,
     target_model_count,
-    chosen_scenarios,
-    scenarios,
-    subscenarios_position,
-    scenarios_position,
+    # scenarios_position,
     balance_weights,
 ):
     """
@@ -55,6 +74,23 @@ def sample_items_v2(
     """
     predictions_train = source_outputs["predictions"]
     scores_train = source_outputs["correctness"][:, :, 0]
+
+    (
+        scenarios,
+        chosen_scenarios,
+        subscenarios_position,
+    ) = derive_scenario_metadata(source_outputs)
+    # # derive scenario metadata from cached outputs
+    # chosen_scenarios = [DEFAULT_SCENARIO]
+    # scenarios = {DEFAULT_SCENARIO: [DEFAULT_SCENARIO]}
+    # # rebuild subscenarios_position from cached Scenarios mapping
+    # subscenarios_position = {DEFAULT_SCENARIO: {DEFAULT_SCENARIO: list(range(scores_train.shape[1]))}}
+    # if "Scenarios" in source_outputs:
+    #     subscenarios_position = {DEFAULT_SCENARIO: {}}
+    #     scenarios = {DEFAULT_SCENARIO: []}
+    #     for scenario_name, positions in source_outputs["Scenarios"].items():
+    #         subscenarios_position[DEFAULT_SCENARIO][scenario_name] = list(positions)
+    #         scenarios[DEFAULT_SCENARIO].append(scenario_name)
 
     # responses_test is only used for shape; fill zeros with correct shape
     responses_test = np.zeros((target_model_count, scores_train.shape[1]))
@@ -183,6 +219,23 @@ def load_or_make_outputs(target_cache_path, source_cache_path, save=False):
         :, :, None
     ]  # add trailing dim (N, Q, 1)
 
+    # recover scenario/subscenario positions for metadata
+    (
+        _scores_train_tmp,
+        _predictions_train_tmp,
+        _predictions_test_tmp,
+        _scores_test_tmp,
+        balance_weights_tmp,
+        scenarios_position_tmp,
+        subscenarios_position_tmp,
+    ) = prepare_and_split_data(
+        chosen_scenarios,
+        scenarios,
+        data,
+        rows_to_hide=set_of_rows[0],
+        n_source_models=None,
+    )
+
     def build_outputs_dict(model_indices):
         preds = all_predictions[model_indices]
         corr = all_correctness[model_indices]
@@ -191,11 +244,19 @@ def load_or_make_outputs(target_cache_path, source_cache_path, save=False):
             for local_idx, orig_idx in enumerate(model_indices)
         }
         datapoints_map = {dp_idx: dp_idx for dp_idx in range(preds.shape[1])}
+        # scenarios_map = {
+        #     # scenario: list(scenarios_position_tmp[scenario])
+        #     # for scenario in scenarios_position_tmp
+        #     scenario: list(subscenarios_position_tmp[scenario])
+        #     for scenario in subscenarios_position_tmp
+        # }
+        scenarios_map = subscenarios_position_tmp["mmlu"]
         return {
             "predictions": preds,
             "correctness": corr,
             "Models": models_map,
             "Datapoints": datapoints_map,
+            "Scenarios": scenarios_map,  # map: scenario name -> list of datapoints from it
         }
 
     target_model_indices = set_of_rows[0]
@@ -207,6 +268,17 @@ def load_or_make_outputs(target_cache_path, source_cache_path, save=False):
 
     target_outputs = build_outputs_dict(target_model_indices)
     source_outputs = build_outputs_dict(source_model_indices)
+
+    (
+        scenarios_new,
+        chosen_scenarios_new,
+        subscenarios_position_new,
+    ) = derive_scenario_metadata(source_outputs, chosen_scenarios=["mmlu"])
+    assert scenarios == scenarios_new
+    assert chosen_scenarios == chosen_scenarios_new
+    # assert subscenarios_position_tmp == subscenarios_position_new
+    # assert scenarios_position_tmp == scenarios_position_new
+    assert subscenarios_position_tmp == subscenarios_position_new
 
     if save:
         os.makedirs(os.path.dirname(target_cache_path), exist_ok=True)
@@ -322,15 +394,15 @@ def main():
         sampling_name=sampling_name,
         source_outputs=source_outputs,
         target_model_count=len(rows_to_hide),
-        chosen_scenarios=chosen_scenarios,
-        scenarios=scenarios,
-        subscenarios_position=subscenarios_position,
-        scenarios_position=scenarios_position,
+        # chosen_scenarios=chosen_scenarios,
+        # scenarios=scenarios,
+        # subscenarios_position=subscenarios_position,
+        # scenarios_position=scenarios_position,
         balance_weights=balance_weights,
     )
     item_weights_new, seen_items_new = samples_v2
     assert _structures_equal(
-        item_weights_old[0]["mmlu"], item_weights_new[0]["mmlu"]
+        item_weights_old[0]["mmlu"], item_weights_new[0]["all"]
     ), "item_weights differ"
     assert _structures_equal(
         seen_items_dic[sampling_name][number_item][0], seen_items_new[0]

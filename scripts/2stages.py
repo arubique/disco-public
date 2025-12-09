@@ -34,7 +34,21 @@ from scripts.evaluate_mmlu import evaluate_mmlu
 sys.path.pop(0)
 
 
-def main():
+def load_or_make_outputs(target_cache_path, source_cache_path, save=False):
+    """
+    Load target/source outputs from disk if available; otherwise build from data and save.
+    """
+
+    if os.path.exists(target_cache_path) and os.path.exists(source_cache_path):
+        return (
+            load_pickle(target_cache_path),
+            load_pickle(source_cache_path),
+            None,
+            None,
+            None,
+            None,
+        )
+
     bench = "mmlu_fields"
     data, scenarios, set_of_rows, data_path = load_and_split_model_outputs(
         bench=bench,
@@ -45,7 +59,6 @@ def main():
         subsample_validation=False,
     )
 
-    # Build target/source outputs dicts from the loaded data (before any filtering)
     chosen_scenarios = list(scenarios.keys())
     all_predictions = create_predictions(chosen_scenarios, scenarios, data)
     all_correctness = create_responses(chosen_scenarios, scenarios, data)[
@@ -55,12 +68,10 @@ def main():
     def build_outputs_dict(model_indices):
         preds = all_predictions[model_indices]
         corr = all_correctness[model_indices]
-        # map original model name to its index within the subset tensors
         models_map = {
             data["models"][orig_idx]: local_idx
             for local_idx, orig_idx in enumerate(model_indices)
         }
-        # datapoint ids align with column order in preds/corr
         datapoints_map = {dp_idx: dp_idx for dp_idx in range(preds.shape[1])}
         return {
             "predictions": preds,
@@ -78,6 +89,50 @@ def main():
 
     target_outputs = build_outputs_dict(target_model_indices)
     source_outputs = build_outputs_dict(source_model_indices)
+
+    if save:
+        os.makedirs(os.path.dirname(target_cache_path), exist_ok=True)
+        dump_pickle(target_outputs, target_cache_path)
+        dump_pickle(source_outputs, source_cache_path)
+
+    return (
+        target_outputs,
+        source_outputs,
+        data,
+        scenarios,
+        set_of_rows,
+        data_path,
+        bench,
+    )
+
+
+def main():
+    # bench = "mmlu_fields"
+    # data, scenarios, set_of_rows, data_path = load_and_split_model_outputs(
+    #     bench=bench,
+    #     split="noniid",
+    #     model_outputs_path=MODEL_OUTPUTS_PATH,
+    #     text_to_vector=None,
+    #     return_data_path=True,
+    #     subsample_validation=False,
+    # )
+
+    cache_dir = os.path.join(ROOT_PATH, "cache")
+    target_cache_path = os.path.join(cache_dir, "target_outputs2.pkl")
+    source_cache_path = os.path.join(cache_dir, "source_outputs2.pkl")
+    (
+        target_outputs,
+        source_outputs,
+        data,
+        scenarios,
+        set_of_rows,
+        data_path,
+        bench,
+    ) = load_or_make_outputs(
+        target_cache_path=target_cache_path,
+        source_cache_path=source_cache_path,
+        save=False,
+    )
 
     chosen_scenarios = list(scenarios.keys())
     split_number = 0

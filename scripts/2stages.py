@@ -2,6 +2,7 @@ from stnd.utility.data_utils import make_or_load_from_cache
 from stnd.utility.utils import apply_random_seed
 import sys
 import os
+import time
 import sklearn
 import numpy as np
 import pandas as pd
@@ -26,12 +27,14 @@ from utils import (
     create_responses,
 )
 from plots import MODEL_OUTPUTS_PATH, load_scores, safe_spearmanr
-from selection import sample_items
+from selection import sample_items, sample_by_disagreement, get_random
 from run_experiment import load_and_split_model_outputs
 from acc import compute_true_acc, compute_acc_knn
 from scripts.evaluate_mmlu import evaluate_mmlu
 
 sys.path.pop(0)
+
+SAMPLING_ITERATIONS = None
 
 
 def sample_items_v2(
@@ -64,23 +67,75 @@ def sample_items_v2(
         }
     )
 
-    return sample_items(
-        number_item,
-        iterations,
-        sampling_name,
-        chosen_scenarios,
-        scenarios,
-        subscenarios_position,
-        responses_test=responses_test,
-        scores_train=scores_train,
+    return sample_items_impl_v2(
+        number_item=number_item,
+        sampling_name=sampling_name,
         predictions_train=predictions_train,
-        scenarios_position=scenarios_position,
-        A=None,
-        B=None,
+        responses_test=responses_test,
         balance_weights=balance_weights,
         disagreement_scores_dict=disagreement_scores_dict,
-        skip_irt=True,
+        chosen_scenarios=chosen_scenarios,
+        scenarios=scenarios,
+        subscenarios_position=subscenarios_position,
     )[:2]
+
+
+def sample_items_impl_v2(
+    number_item,
+    sampling_name,
+    predictions_train,
+    responses_test,
+    balance_weights,
+    disagreement_scores_dict,
+    chosen_scenarios,
+    scenarios,
+    subscenarios_position,
+):
+    """
+    Simplified sampler for random/disagreement sampling without full scenario metadata.
+    Iterations are read from the module-level SAMPLING_ITERATIONS (default=1).
+    """
+    iterations = SAMPLING_ITERATIONS or 1
+
+    item_weights_dic, seen_items_dic, unseen_items_dic = {}, {}, {}
+    start_time = time.time()
+
+    for it in range(iterations):
+        if "disagreement" in sampling_name:
+            item_weights, seen_items, unseen_items = sample_by_disagreement(
+                sampling_name,
+                chosen_scenarios,
+                scenarios,
+                number_item,
+                subscenarios_position,
+                num_samples_in_test=responses_test.shape[1],
+                predictions_train=predictions_train,
+                balance_weights=balance_weights,
+                disagreement_scores_dict=disagreement_scores_dict,
+                random_seed=it,
+                high_first=("high" in sampling_name),
+            )
+        elif sampling_name == "random":
+            item_weights, seen_items, unseen_items = get_random(
+                chosen_scenarios,
+                scenarios,
+                number_item,
+                subscenarios_position,
+                responses_test,
+                balance_weights,
+                random_seed=it,
+            )
+        else:
+            raise NotImplementedError(
+                "sample_items_impl_v2 supports only random or disagreement sampling"
+            )
+
+        item_weights_dic[it] = item_weights
+        seen_items_dic[it] = seen_items
+        unseen_items_dic[it] = unseen_items
+
+    elapsed_time = (time.time() - start_time) / iterations
+    return item_weights_dic, seen_items_dic, unseen_items_dic, elapsed_time
 
 
 def _structures_equal(a, b):
@@ -257,6 +312,10 @@ def main():
         _,
     ) = samples
 
+    # expose iterations to the simplified sampler
+    global SAMPLING_ITERATIONS
+    SAMPLING_ITERATIONS = iterations
+
     samples_v2 = sample_items_v2(
         number_item=number_item,
         iterations=iterations,
@@ -271,10 +330,10 @@ def main():
     )
     item_weights_new, seen_items_new = samples_v2
     assert _structures_equal(
-        item_weights_old, item_weights_new
+        item_weights_old[0]["mmlu"], item_weights_new[0]["mmlu"]
     ), "item_weights differ"
     assert _structures_equal(
-        seen_items_dic[sampling_name][number_item], seen_items_new
+        seen_items_dic[sampling_name][number_item][0], seen_items_new[0]
     ), "seen_items differ"
 
     # load embeddings

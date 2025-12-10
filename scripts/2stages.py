@@ -61,19 +61,20 @@ def derive_scenario_metadata(
 
 def sample_items_v2(
     number_item,
-    iterations,
+    # iterations,
     sampling_name,
     source_outputs,
-    target_model_count,
+    # target_model_count,
     # scenarios_position,
-    balance_weights,
+    # balance_weights,
+    random_seed,
 ):
     """
     Convenience wrapper to sample items without using target_outputs.
     Only source_outputs plus metadata are used; target_model_count provides the test-set size.
     """
     predictions_train = source_outputs["predictions"]
-    scores_train = source_outputs["correctness"][:, :, 0]
+    # scores_train = source_outputs["correctness"][:, :, 0]
 
     (
         scenarios,
@@ -93,7 +94,11 @@ def sample_items_v2(
     #         scenarios[DEFAULT_SCENARIO].append(scenario_name)
 
     # responses_test is only used for shape; fill zeros with correct shape
-    responses_test = np.zeros((target_model_count, scores_train.shape[1]))
+    # responses_test = np.zeros((target_model_count, scores_train.shape[1]))
+
+    balance_weights = make_balance_weights(
+        source_outputs
+    )  # needed for stratified sampling
 
     disagreement_scores_dict = make_disagreement_scores_dict(
         config={
@@ -107,12 +112,13 @@ def sample_items_v2(
         number_item=number_item,
         sampling_name=sampling_name,
         predictions_train=predictions_train,
-        responses_test=responses_test,
+        # responses_test=responses_test,
         balance_weights=balance_weights,
         disagreement_scores_dict=disagreement_scores_dict,
         chosen_scenarios=chosen_scenarios,
         scenarios=scenarios,
         subscenarios_position=subscenarios_position,
+        random_seed=random_seed,
     )[:2]
 
 
@@ -120,58 +126,60 @@ def sample_items_impl_v2(
     number_item,
     sampling_name,
     predictions_train,
-    responses_test,
+    # responses_test,
     balance_weights,
     disagreement_scores_dict,
     chosen_scenarios,
     scenarios,
     subscenarios_position,
+    random_seed,
 ):
     """
     Simplified sampler for random/disagreement sampling without full scenario metadata.
     Iterations are read from the module-level SAMPLING_ITERATIONS (default=1).
     """
-    iterations = SAMPLING_ITERATIONS or 1
+    # iterations = SAMPLING_ITERATIONS or 1
 
-    item_weights_dic, seen_items_dic, unseen_items_dic = {}, {}, {}
+    # item_weights_dic, seen_items_dic, unseen_items_dic = {}, {}, {}
     start_time = time.time()
 
-    for it in range(iterations):
-        if "disagreement" in sampling_name:
-            item_weights, seen_items, unseen_items = sample_by_disagreement(
-                sampling_name,
-                chosen_scenarios,
-                scenarios,
-                number_item,
-                subscenarios_position,
-                num_samples_in_test=responses_test.shape[1],
-                predictions_train=predictions_train,
-                balance_weights=balance_weights,
-                disagreement_scores_dict=disagreement_scores_dict,
-                random_seed=it,
-                high_first=("high" in sampling_name),
-            )
-        elif sampling_name == "random":
-            item_weights, seen_items, unseen_items = get_random(
-                chosen_scenarios,
-                scenarios,
-                number_item,
-                subscenarios_position,
-                responses_test,
-                balance_weights,
-                random_seed=it,
-            )
-        else:
-            raise NotImplementedError(
-                "sample_items_impl_v2 supports only random or disagreement sampling"
-            )
+    # for it in range(iterations):
+    if "disagreement" in sampling_name:
+        item_weights, seen_items, unseen_items = sample_by_disagreement(
+            sampling_name,
+            chosen_scenarios,
+            scenarios,
+            number_item,
+            subscenarios_position,
+            num_samples_in_test=None,
+            predictions_train=predictions_train,
+            balance_weights=None,
+            disagreement_scores_dict=disagreement_scores_dict,
+            random_seed=random_seed,
+            high_first=("high" in sampling_name),
+        )
+    elif sampling_name == "random":
+        item_weights, seen_items, unseen_items = get_random(
+            chosen_scenarios,
+            scenarios,
+            number_item,
+            subscenarios_position,
+            responses_test=None,
+            balance_weights=balance_weights,
+            random_seed=random_seed,
+        )
+    else:
+        raise NotImplementedError(
+            "sample_items_impl_v2 supports only random or disagreement sampling"
+        )
 
-        item_weights_dic[it] = item_weights
-        seen_items_dic[it] = seen_items
-        unseen_items_dic[it] = unseen_items
+    # item_weights_dic[it] = item_weights
+    # seen_items_dic[it] = seen_items
+    # unseen_items_dic[it] = unseen_items
 
-    elapsed_time = (time.time() - start_time) / iterations
-    return item_weights_dic, seen_items_dic, unseen_items_dic, elapsed_time
+    # elapsed_time = (time.time() - start_time) / iterations
+    elapsed_time = time.time() - start_time
+    return item_weights, seen_items, unseen_items, elapsed_time
 
 
 def _structures_equal(a, b):
@@ -186,6 +194,32 @@ def _structures_equal(a, b):
             _structures_equal(a[k], b[k]) for k in a.keys()
         )
     return a == b
+
+
+def make_balance_weights(source_outputs):
+    scenarios_map = source_outputs["Scenarios"]
+    datapoints_map = source_outputs["Datapoints"]
+    n_all_datapoints = len(datapoints_map)
+    balance_weights = np.ones(n_all_datapoints)
+    n_scenarios = len(scenarios_map)
+    for scenario in scenarios_map:
+        # n = len(scenarios_map[scenario])
+        # N = len(scenarios_position[scenario])
+        points_per_scenario = [
+            datapoints_map[datapoint_key]
+            for datapoint_key in scenarios_map[scenario]
+        ]
+        n_per_scenario = len(points_per_scenario)
+        balance_weights[points_per_scenario] = n_all_datapoints / (
+            n_per_scenario * n_scenarios
+        )
+
+        # for sub in scenarios[scenario]:
+        #     n_i = len(subscenarios_position[scenario][sub])
+        #     balance_weights[subscenarios_position[scenario][sub]] = N / (
+        #         n_sub * n_i
+        #     )
+    return balance_weights
 
 
 def load_or_make_outputs(target_cache_path, source_cache_path, save=False):
@@ -250,7 +284,9 @@ def load_or_make_outputs(target_cache_path, source_cache_path, save=False):
         #     scenario: list(subscenarios_position_tmp[scenario])
         #     for scenario in subscenarios_position_tmp
         # }
-        scenarios_map = subscenarios_position_tmp["mmlu"]
+        scenarios_map = subscenarios_position_tmp[
+            "mmlu"
+        ]  # scenario name -> list of datapoints from it
         return {
             "predictions": preds,
             "correctness": corr,
@@ -279,6 +315,12 @@ def load_or_make_outputs(target_cache_path, source_cache_path, save=False):
     # assert subscenarios_position_tmp == subscenarios_position_new
     # assert scenarios_position_tmp == scenarios_position_new
     assert subscenarios_position_tmp == subscenarios_position_new
+
+    balance_weights = make_balance_weights(source_outputs)
+    # assert _structures_equal(balance_weights, balance_weights_tmp), "balance_weights differ"
+    assert np.allclose(
+        balance_weights, balance_weights_tmp
+    ), "balance_weights differ"
 
     if save:
         os.makedirs(os.path.dirname(target_cache_path), exist_ok=True)
@@ -385,27 +427,28 @@ def main():
     ) = samples
 
     # expose iterations to the simplified sampler
-    global SAMPLING_ITERATIONS
-    SAMPLING_ITERATIONS = iterations
+    # global SAMPLING_ITERATIONS
+    # SAMPLING_ITERATIONS = iterations
 
     samples_v2 = sample_items_v2(
         number_item=number_item,
-        iterations=iterations,
+        # iterations=iterations,
         sampling_name=sampling_name,
         source_outputs=source_outputs,
-        target_model_count=len(rows_to_hide),
+        # target_model_count=len(rows_to_hide),
         # chosen_scenarios=chosen_scenarios,
         # scenarios=scenarios,
         # subscenarios_position=subscenarios_position,
         # scenarios_position=scenarios_position,
-        balance_weights=balance_weights,
+        # balance_weights=balance_weights,
+        random_seed=RANDOM_SEED,
     )
     item_weights_new, seen_items_new = samples_v2
     assert _structures_equal(
-        item_weights_old[0]["mmlu"], item_weights_new[0]["all"]
+        item_weights_old[0]["mmlu"], item_weights_new["all"]
     ), "item_weights differ"
     assert _structures_equal(
-        seen_items_dic[sampling_name][number_item][0], seen_items_new[0]
+        seen_items_dic[sampling_name][number_item][0], seen_items_new
     ), "seen_items differ"
 
     # load embeddings

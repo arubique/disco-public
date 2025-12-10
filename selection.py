@@ -94,10 +94,13 @@ def get_random(
 
         seen_items += seen_items_scenario
 
-    # Determine the unseen items by finding all item indices that are not in the seen items list.
-    unseen_items = [
-        i for i in range(responses_test.shape[1]) if i not in seen_items
-    ]
+    if responses_test is not None:
+        # Determine the unseen items by finding all item indices that are not in the seen items list.
+        unseen_items = [
+            i for i in range(responses_test.shape[1]) if i not in seen_items
+        ]
+    else:
+        unseen_items = []
 
     return item_weights, seen_items, unseen_items
 
@@ -261,9 +264,12 @@ def sample_by_disagreement(
     for scenario in scenarios_choosen:
         item_weights[scenario] = np.ones(number_item) / number_item
 
-    unseen_items = [
-        i for i in range(num_samples_in_test) if i not in seen_items
-    ]
+    if num_samples_in_test is not None:
+        unseen_items = [
+            i for i in range(num_samples_in_test) if i not in seen_items
+        ]
+    else:
+        unseen_items = []
 
     return item_weights, seen_items, unseen_items
 

@@ -716,11 +716,17 @@ def prepare_and_split_data(
     predictions = create_predictions(chosen_scenarios, scenarios, data)
     # Balance weights
     balance_weights = np.ones(scores.shape[1])
-    for scenario in chosen_scenarios:
-        N = len(scenarios_position[scenario])
-        n_sub = len(scenarios[scenario])
-        for sub in scenarios[scenario]:
-            n_i = len(subscenarios_position[scenario][sub])
+    for scenario in chosen_scenarios:  # list of scnearios, e.g., ["mmlu"]
+        N = len(
+            scenarios_position[scenario]
+        )  # #datapoints in scenario, e.g., 14042
+        n_sub = len(scenarios[scenario])  # #sub-scenarios, e.g., 57
+        for sub in scenarios[
+            scenario
+        ]:  # sub-scenario name, e.g., "harness_hendrycksTest_abstract_algebra_5"
+            n_i = len(
+                subscenarios_position[scenario][sub]
+            )  # #datapoints in sub-scenario, e.g., 100
             balance_weights[subscenarios_position[scenario][sub]] = N / (
                 n_sub * n_i
             )

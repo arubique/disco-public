@@ -624,7 +624,10 @@ def compute_embedding(
     predictions, anchor_indices, pca, transform=None, apply_softmax=True
 ):
     # if logits are input
-    preds_for_anchors = torch.Tensor(predictions)[:, anchor_indices, :]
+    if anchor_indices is not None:
+        preds_for_anchors = torch.Tensor(predictions)[:, anchor_indices, :]
+    else:
+        preds_for_anchors = torch.Tensor(predictions)
 
     if apply_softmax:
         emb_unreduced = preds_for_anchors.softmax(dim=-1)

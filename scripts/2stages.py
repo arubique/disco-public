@@ -17,6 +17,7 @@ from experiments import (
     make_cache_subpath,
     make_disagreement_scores_dict,
     make_fitted_weights,
+    compute_embedding,
 )
 from utils import (
     lb_scenarios,
@@ -443,12 +444,12 @@ def main():
         # balance_weights=balance_weights,
         random_seed=RANDOM_SEED,
     )
-    item_weights_new, seen_items_new = samples_v2
+    item_weights_new, anchor_points_new = samples_v2
     assert _structures_equal(
         item_weights_old[0]["mmlu"], item_weights_new["all"]
     ), "item_weights differ"
     assert _structures_equal(
-        seen_items_dic[sampling_name][number_item][0], seen_items_new
+        seen_items_dic[sampling_name][number_item][0], anchor_points_new
     ), "seen_items differ"
 
     # load embeddings
@@ -480,6 +481,42 @@ def main():
             "apply_softmax": apply_softmax_to_predictions,
         }
     )
+
+    predictions_train_v2 = source_outputs["predictions"][
+        :, anchor_points_new, :
+    ]
+    train_embeddings_v2, transform_v2 = compute_embedding(
+        predictions_train_v2,
+        anchor_indices=None,
+        pca=pca,
+        transform=None,
+        apply_softmax=True,
+    )
+    assert np.allclose(
+        train_embeddings_v2,
+        train_models_embeddings[sampling_name][number_item][0],
+    ), "train_embeddings_v2 differ"
+
+    predictions_test_v2 = target_outputs["predictions"][:, anchor_points_new, :]
+    target_embeddings_v2, _ = compute_embedding(
+        predictions_test_v2,
+        anchor_indices=None,
+        pca=pca,
+        transform=transform_v2,
+        apply_softmax=True,
+    )
+    assert np.allclose(
+        target_embeddings_v2,
+        test_models_embeddings[sampling_name][number_item][0],
+    ), "target_embeddings_v2 differ"
+
+    # target_embeddings_v2, _ = compute_embedding(
+    #     predictions_test,
+    #     seen_items_new,
+    #     pca,
+    #     transform_v2,
+    #     apply_softmax=True,
+    # )
 
     # make_or_load_from_cache(
     #     object_name="train_test_model_embeddings",

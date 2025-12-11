@@ -6,6 +6,7 @@ import time
 import sklearn
 import numpy as np
 import pandas as pd
+import torch
 
 ROOT_PATH = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -221,6 +222,148 @@ def make_balance_weights(source_outputs):
         #         n_sub * n_i
         #     )
     return balance_weights
+
+
+def compute_true_acc_v2(source_outputs, chosen_scenarios=None):
+    """
+    Compute true accuracies using only source_outputs.
+
+    Parameters:
+    - source_outputs: Dictionary containing:
+        - "correctness": array of shape (n_models, n_questions, 1) with correctness scores
+        - "Scenarios": dict mapping scenario names to lists of datapoint indices
+        - "Models": dict mapping model names to local model indices
+    - chosen_scenarios: Optional list of scenario names. If None, uses all scenarios from source_outputs["Scenarios"]
+
+    Returns:
+    - Dictionary mapping model names to dictionaries mapping scenario names to accuracies
+    """
+    # Extract scores from correctness (remove trailing dimension)
+    scores = source_outputs["correctness"][
+        :, :, 0
+    ]  # shape: (n_models, n_questions)
+
+    # Get balance weights
+    balance_weights = make_balance_weights(source_outputs)
+
+    # Get scenarios_position from source_outputs
+    scenarios_position = source_outputs["Scenarios"]
+
+    # Get chosen_scenarios if not provided
+    if chosen_scenarios is None:
+        chosen_scenarios = list(scenarios_position.keys())
+
+    # Get model mapping
+    models_map = source_outputs["Models"]  # model_name -> local_index
+    # Get all model indices (local indices), sorted to ensure consistent ordering
+    model_indices = sorted(models_map.values())
+    # Use indices as keys (matching the original compute_true_acc behavior)
+    model_keys_dict = {idx: idx for idx in model_indices}
+
+    # Compute accuracies using the same logic as compute_true_acc
+    accs_true = {}
+    # for j in model_indices:
+    #     accs_true[model_keys_dict[j]] = {}
+    #     for scenario in chosen_scenarios:
+    #         accs_true[model_keys_dict[j]][scenario] = (
+    #             (balance_weights[None, :] * scores)[
+    #                 j, scenarios_position[scenario]
+    #             ]
+    #         ).mean()
+    for j in model_indices:
+        accs_true[model_keys_dict[j]] = {}
+        for scenario in chosen_scenarios:
+            accs_true[model_keys_dict[j]][scenario] = (
+                (balance_weights[None, :] * scores)[j, :]
+            ).mean()
+    return accs_true
+
+
+def compute_predicted_accs_v2(
+    target_embeddings_v2,
+    fitted_weights,
+    train_embeddings_v2,
+    train_model_true_accs_new,
+    scenario,
+    rows_to_hide,
+    sampling_name,
+    number_item,
+    iterations,
+    fitted_model_type,
+):
+    """
+    Compute predicted_accs_new and predicted_accs_knn_new using target_embeddings_v2 and fitted_weights.
+
+    Similar to the computation in lines 656-683, but uses target_embeddings_v2 and train_embeddings_v2
+    which are not per-seed (single arrays instead of per-seed dictionaries).
+
+    Parameters:
+    - target_embeddings_v2: array of shape (n_target_models, embedding_dim)
+    - fitted_weights: dict with structure fitted_weights[sampling_name][number_item][seed][fitted_model_type]
+    - train_embeddings_v2: array of shape (n_train_models, embedding_dim)
+    - train_model_true_accs_new: dict mapping model indices to scenario accuracies
+    - scenario: string scenario name
+    - rows_to_hide: list of target model indices
+    - sampling_name: string sampling name
+    - number_item: int number of items
+    - iterations: int number of iterations/seeds
+    - fitted_model_type: string fitted model type
+
+    Returns:
+    - predicted_accs_new: dict mapping target_model to list of predicted accuracies
+    - predicted_accs_knn_new: dict mapping target_model to list of KNN predicted accuracies
+    """
+    predictors_per_seed = fitted_weights[sampling_name][number_item]
+    predicted_accs_new = {}
+    predicted_accs_knn_new = {}
+
+    for seed in range(iterations):
+        fitted_model = predictors_per_seed[seed][fitted_model_type]
+        for target_model_idx in range(target_embeddings_v2.shape[0]):
+            test_model_embedding = target_embeddings_v2[target_model_idx]
+
+            # Convert to numpy if it's a torch tensor
+            if isinstance(test_model_embedding, torch.Tensor):
+                test_model_embedding_np = test_model_embedding.numpy()
+            else:
+                test_model_embedding_np = test_model_embedding
+
+            # Predict using fitted model
+            fitted_acc = fitted_model.predict(
+                test_model_embedding_np.reshape(1, -1)
+            )[0]
+
+            # Compute KNN accuracy
+            # Convert train_embeddings_v2 to torch tensor if needed for compute_acc_knn
+            if isinstance(train_embeddings_v2, torch.Tensor):
+                train_embeddings_v2_torch = train_embeddings_v2
+            else:
+                train_embeddings_v2_torch = torch.from_numpy(
+                    train_embeddings_v2
+                )
+
+            if isinstance(test_model_embedding, torch.Tensor):
+                test_model_embedding_torch = test_model_embedding
+            else:
+                test_model_embedding_torch = torch.from_numpy(
+                    test_model_embedding_np
+                )
+
+            fitted_acc_knn = compute_acc_knn(
+                test_model_embedding=test_model_embedding_torch,
+                train_model_embeddings=train_embeddings_v2_torch,
+                scenario=scenario,
+                train_model_true_accs=train_model_true_accs_new,
+            )
+
+            target_model = rows_to_hide[target_model_idx]
+            if target_model not in predicted_accs_new:
+                predicted_accs_new[target_model] = []
+                predicted_accs_knn_new[target_model] = []
+            predicted_accs_new[target_model].append(fitted_acc)
+            predicted_accs_knn_new[target_model].append(fitted_acc_knn)
+
+    return predicted_accs_new, predicted_accs_knn_new
 
 
 def load_or_make_outputs(target_cache_path, source_cache_path, save=False):
@@ -545,6 +688,14 @@ def main():
         train_model_indices,  # they are not the global indices, but the contiguous indices of train models after removing test models
     )
 
+    train_model_true_accs_new = compute_true_acc_v2(
+        source_outputs,
+        chosen_scenarios=["mmlu"],
+    )
+    assert _structures_equal(
+        train_model_true_accs, train_model_true_accs_new
+    ), "train_model_true_accs differ"
+
     # "RandomForestRegressor_100": {
     #     "class_path": "sklearn.ensemble.RandomForestRegressor",
     #     "params": {"n_estimators": 100}
@@ -618,6 +769,25 @@ def main():
                 predicted_accs_knn[target_model] = []
             predicted_accs[target_model].append(fitted_acc)
             predicted_accs_knn[target_model].append(fitted_acc_knn)
+
+    predicted_accs_new, predicted_accs_knn_new = compute_predicted_accs_v2(
+        target_embeddings_v2=target_embeddings_v2,
+        fitted_weights=fitted_weights,
+        train_embeddings_v2=train_embeddings_v2,
+        train_model_true_accs_new=train_model_true_accs_new,
+        scenario=scenario,
+        rows_to_hide=rows_to_hide,
+        sampling_name=sampling_name,
+        number_item=number_item,
+        iterations=iterations,
+        fitted_model_type=fitted_model_type,
+    )
+    assert _structures_equal(
+        predicted_accs, predicted_accs_new
+    ), "predicted_accs differ"
+    assert _structures_equal(
+        predicted_accs_knn, predicted_accs_knn_new
+    ), "predicted_accs_knn differ"
 
     scores = load_scores(
         bench,

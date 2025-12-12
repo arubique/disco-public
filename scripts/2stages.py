@@ -285,7 +285,8 @@ def compute_predicted_accs_v2(
     train_embeddings_v2,
     train_model_true_accs_new,
     scenario,
-    rows_to_hide,
+    # rows_to_hide,
+    target_id_to_model_name,
     sampling_name,
     number_item,
     iterations,
@@ -316,6 +317,8 @@ def compute_predicted_accs_v2(
     predictors_per_seed = fitted_weights[sampling_name][number_item]
     predicted_accs_new = {}
     predicted_accs_knn_new = {}
+
+    # target_id_to_model_name = {i: model_name for model_name, i in source_outputs["Models"].items()}
 
     for seed in range(iterations):
         fitted_model = predictors_per_seed[seed][fitted_model_type]
@@ -356,7 +359,8 @@ def compute_predicted_accs_v2(
                 train_model_true_accs=train_model_true_accs_new,
             )
 
-            target_model = rows_to_hide[target_model_idx]
+            # target_model = rows_to_hide[target_model_idx]
+            target_model = target_id_to_model_name[target_model_idx]
             if target_model not in predicted_accs_new:
                 predicted_accs_new[target_model] = []
                 predicted_accs_knn_new[target_model] = []
@@ -770,24 +774,27 @@ def main():
             predicted_accs[target_model].append(fitted_acc)
             predicted_accs_knn[target_model].append(fitted_acc_knn)
 
+    target_id_to_model_name = {
+        i: model_name for model_name, i in target_outputs["Models"].items()
+    }
     predicted_accs_new, predicted_accs_knn_new = compute_predicted_accs_v2(
         target_embeddings_v2=target_embeddings_v2,
         fitted_weights=fitted_weights,
         train_embeddings_v2=train_embeddings_v2,
         train_model_true_accs_new=train_model_true_accs_new,
         scenario=scenario,
-        rows_to_hide=rows_to_hide,
+        target_id_to_model_name=target_id_to_model_name,
         sampling_name=sampling_name,
         number_item=number_item,
         iterations=iterations,
         fitted_model_type=fitted_model_type,
     )
-    assert _structures_equal(
-        predicted_accs, predicted_accs_new
-    ), "predicted_accs differ"
-    assert _structures_equal(
-        predicted_accs_knn, predicted_accs_knn_new
-    ), "predicted_accs_knn differ"
+    # assert _structures_equal(
+    #     predicted_accs, predicted_accs_new
+    # ), "predicted_accs differ"
+    # assert _structures_equal(
+    #     predicted_accs_knn, predicted_accs_knn_new
+    # ), "predicted_accs_knn differ"
 
     scores = load_scores(
         bench,
@@ -819,12 +826,68 @@ def main():
         maes_per_method[method_name] = maes
         rank_corrs_per_method[method_name] = np.array(rank_corrs)
 
-    for method_name, maes in maes_per_method.items():
-        rank_corrs = rank_corrs_per_method[method_name]
-        mae_str = f"{maes.mean(axis=1).mean()} +- {maes.std(axis=1).mean()}"
+    gt_scores_new = {}
+    balance_weights_new = make_balance_weights(target_outputs)
+    correctness_new = target_outputs["correctness"][..., 0]
+    scores = correctness_new * balance_weights_new
+    for target_model_name in target_outputs["Models"].keys():
+        target_model_idx = target_outputs["Models"][target_model_name]
+        gt_scores_new[target_model_name] = scores[target_model_idx].mean()
 
-        rank_corrs_str = f"{rank_corrs.mean().mean()} +- {rank_corrs.std()}"
-        print(f"{method_name}: {mae_str} | {rank_corrs_str}")
+    maes_per_method_new = {}
+    rank_corrs_per_method_new = {}
+    predictions_new = {
+        "fitted": predicted_accs_new,
+        "knn": predicted_accs_knn_new,
+    }
+    gt_scores_new_np = np.stack(
+        [
+            gt_scores_new[target_model_idx]
+            for target_model_idx in target_outputs["Models"].keys()
+        ],
+        axis=0,
+    )
+    for method_name, accs in predictions_new.items():
+        rank_corrs_new = []
+        # pred_accs_as_np = np.stack(list(predicted_accs.values()), axis=0)
+        # pred_accs_as_np = np.stack(list(accs.values()), axis=0)
+        pred_accs_as_np_new = np.stack(
+            list(
+                [
+                    accs[target_model_name]
+                    for target_model_name in target_outputs["Models"].keys()
+                ]
+            ),
+            axis=0,
+        )
+        maes_new = np.abs(pred_accs_as_np_new - gt_scores_new_np[:, None])
+        for i in range(pred_accs_as_np_new.shape[1]):
+            rank_corrs_new.append(
+                safe_spearmanr(
+                    pred_accs_as_np_new[:, i],
+                    gt_scores_new_np[:, None],
+                )
+            )
+        maes_per_method_new[method_name] = maes_new
+        rank_corrs_per_method_new[method_name] = np.array(rank_corrs_new)
+
+    # assert _structures_equal(
+    #     maes_per_method, maes_per_method_new
+    # ), "predicted_accs differ"
+    # assert _structures_equal(
+    #     rank_corrs_per_method, rank_corrs_per_method_new
+    # ), "predicted_accs_knn differ"
+
+    def print_mae_and_rank_corrs(maes_per_method, rank_corrs_per_method):
+        for method_name, maes in maes_per_method.items():
+            rank_corrs = rank_corrs_per_method[method_name]
+            mae_str = f"{maes.mean(axis=1).mean()} +- {maes.std(axis=1).mean()}"
+
+            rank_corrs_str = f"{rank_corrs.mean().mean()} +- {rank_corrs.std()}"
+            print(f"{method_name}: {mae_str} | {rank_corrs_str}")
+
+    print_mae_and_rank_corrs(maes_per_method, rank_corrs_per_method)
+    print_mae_and_rank_corrs(maes_per_method_new, rank_corrs_per_method_new)
 
 
 if __name__ == "__main__":

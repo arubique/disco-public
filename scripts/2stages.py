@@ -511,7 +511,7 @@ def main():
     ) = load_or_make_outputs(
         target_cache_path=target_cache_path,
         source_cache_path=source_cache_path,
-        save=False,
+        save=True,
     )
 
     chosen_scenarios = list(scenarios.keys())

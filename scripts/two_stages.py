@@ -370,12 +370,19 @@ def compute_predicted_accs_v2(
     return predicted_accs_new, predicted_accs_knn_new
 
 
-def load_or_make_outputs(target_cache_path, source_cache_path, save=False):
+def load_or_make_outputs(
+    target_cache_path, source_cache_path, bench, save=False
+):
     """
     Load target/source outputs from disk if available; otherwise build from data and save.
     """
 
-    if os.path.exists(target_cache_path) and os.path.exists(source_cache_path):
+    if (
+        target_cache_path is not None
+        and source_cache_path is not None
+        and os.path.exists(target_cache_path)
+        and os.path.exists(source_cache_path)
+    ):
         return (
             load_pickle(target_cache_path),
             load_pickle(source_cache_path),
@@ -385,7 +392,6 @@ def load_or_make_outputs(target_cache_path, source_cache_path, save=False):
             None,
         )
 
-    bench = "mmlu_fields"
     data, scenarios, set_of_rows, data_path = load_and_split_model_outputs(
         bench=bench,
         split="noniid",
@@ -418,7 +424,7 @@ def load_or_make_outputs(target_cache_path, source_cache_path, save=False):
         n_source_models=None,
     )
 
-    def build_outputs_dict(model_indices):
+    def build_outputs_dict(model_indices, bench):
         preds = all_predictions[model_indices]
         corr = all_correctness[model_indices]
         models_map = {
@@ -433,7 +439,7 @@ def load_or_make_outputs(target_cache_path, source_cache_path, save=False):
         #     for scenario in subscenarios_position_tmp
         # }
         scenarios_map = subscenarios_position_tmp[
-            "mmlu"
+            bench.split("_")[0]
         ]  # scenario name -> list of datapoints from it
         return {
             "predictions": preds,
@@ -450,14 +456,16 @@ def load_or_make_outputs(target_cache_path, source_cache_path, save=False):
         if i not in target_model_indices
     ]
 
-    target_outputs = build_outputs_dict(target_model_indices)
-    source_outputs = build_outputs_dict(source_model_indices)
+    target_outputs = build_outputs_dict(target_model_indices, bench)
+    source_outputs = build_outputs_dict(source_model_indices, bench)
 
     (
         scenarios_new,
         chosen_scenarios_new,
         subscenarios_position_new,
-    ) = derive_scenario_metadata(source_outputs, chosen_scenarios=["mmlu"])
+    ) = derive_scenario_metadata(
+        source_outputs, chosen_scenarios=[bench.split("_")[0]]
+    )
     assert scenarios == scenarios_new
     assert chosen_scenarios == chosen_scenarios_new
     # assert subscenarios_position_tmp == subscenarios_position_new
@@ -482,7 +490,7 @@ def load_or_make_outputs(target_cache_path, source_cache_path, save=False):
         scenarios,
         set_of_rows,
         data_path,
-        bench,
+        # bench,
     )
 
 
@@ -500,6 +508,8 @@ def main():
     cache_dir = os.path.join(ROOT_PATH, "cache")
     target_cache_path = os.path.join(cache_dir, "target_outputs2.pkl")
     source_cache_path = os.path.join(cache_dir, "source_outputs2.pkl")
+    # bench = "mmlu_fields"
+    bench = "hellaswag"
     (
         target_outputs,
         source_outputs,
@@ -507,11 +517,12 @@ def main():
         scenarios,
         set_of_rows,
         data_path,
-        bench,
+        # bench,
     ) = load_or_make_outputs(
         target_cache_path=target_cache_path,
         source_cache_path=source_cache_path,
-        save=True,
+        bench=bench,
+        save=False,
     )
 
     chosen_scenarios = list(scenarios.keys())
@@ -694,7 +705,7 @@ def main():
 
     train_model_true_accs_new = compute_true_acc_v2(
         source_outputs,
-        chosen_scenarios=["mmlu"],
+        chosen_scenarios=[bench.split("_")[0]],
     )
     assert _structures_equal(
         train_model_true_accs, train_model_true_accs_new

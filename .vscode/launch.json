@@ -5,23 +5,25 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Run 2 Stages",
+            "name": "Run Two Stages",
             "type": "debugpy",
             "request": "launch",
-            "program": "/home/oh/arubinstein17/github/disco-public/scripts/2stages.py",
+            "program": "/home/oh/arubinstein17/github/disco-public/scripts/two_stages.py",
             "console": "integratedTerminal"
         },
         {
-            "name": "Run 2 Stages V2",
+            "name": "Run Two Stages V2",
             "type": "debugpy",
             "request": "launch",
-            "program": "/home/oh/arubinstein17/github/disco-public/scripts/2stages_v2.py",
+            "program": "/home/oh/arubinstein17/github/disco-public/scripts/two_stages_v2.py",
             "console": "integratedTerminal",
             "args": [
                 "--source_model_outputs_path",
-                "/home/oh/arubinstein17/github/disco-public/data/model_outputs/mmlu/source_outputs2.pkl",
+                // "/home/oh/arubinstein17/github/disco-public/data/model_outputs/mmlu/source_outputs.pkl",
+                "/home/oh/arubinstein17/github/disco-public/data/model_outputs/hellaswag/source_outputs.pkl",
                 "--target_model_outputs_path",
-                "/home/oh/arubinstein17/github/disco-public/data/model_outputs/mmlu/target_outputs2.pkl"
+                // "/home/oh/arubinstein17/github/disco-public/data/model_outputs/mmlu/target_outputs.pkl"
+                "/home/oh/arubinstein17/github/disco-public/data/model_outputs/hellaswag/target_outputs.pkl"
             ]
         },
         {

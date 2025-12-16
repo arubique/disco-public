@@ -12,6 +12,19 @@
             "console": "integratedTerminal"
         },
         {
+            "name": "Run 2 Stages V2",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "/home/oh/arubinstein17/github/disco-public/scripts/2stages_v2.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--source_model_outputs_path",
+                "/home/oh/arubinstein17/github/disco-public/data/model_outputs/mmlu/source_outputs2.pkl",
+                "--target_model_outputs_path",
+                "/home/oh/arubinstein17/github/disco-public/data/model_outputs/mmlu/target_outputs2.pkl"
+            ]
+        },
+        {
             "name": "Run Experiment (MMLU Fields PDS)",
             "type": "debugpy",
             "request": "launch",

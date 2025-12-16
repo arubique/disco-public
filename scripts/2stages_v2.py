@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 import torch
 import argparse
+import torch.nn.functional as F
 
 ROOT_PATH = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -15,26 +16,27 @@ ROOT_PATH = os.path.join(
 sys.path.insert(0, ROOT_PATH)
 from experiments import (
     RANDOM_SEED,
-    make_train_test_model_embeddings,
-    make_cache_subpath,
+    # make_train_test_model_embeddings,
+    # make_cache_subpath,
     make_disagreement_scores_dict,
-    make_fitted_weights,
+    # make_fitted_weights,
     compute_embedding,
-    make_fitted_model,
+    # make_fitted_model,
 )
 from utils import (
-    lb_scenarios,
+    # lb_scenarios,
     dump_pickle,
     load_pickle,
     prepare_and_split_data,
     create_predictions,
     create_responses,
 )
-from plots import MODEL_OUTPUTS_PATH, load_scores, safe_spearmanr
-from selection import sample_items, sample_by_disagreement, get_random
+from plots import safe_spearmanr
+from selection import sample_by_disagreement, get_random
 from run_experiment import load_and_split_model_outputs
-from acc import compute_true_acc, compute_acc_knn
-from scripts.evaluate_mmlu import evaluate_mmlu
+
+# from acc import compute_true_acc, compute_acc_knn
+# from scripts.evaluate_mmlu import evaluate_mmlu
 
 sys.path.pop(0)
 
@@ -235,7 +237,7 @@ def make_balance_weights(source_outputs):
     return balance_weights
 
 
-def compute_true_acc_v2(source_outputs, chosen_scenarios=None):
+def compute_true_acc_v2(source_outputs):
     """
     Compute true accuracies using only source_outputs.
 
@@ -244,10 +246,9 @@ def compute_true_acc_v2(source_outputs, chosen_scenarios=None):
         - "correctness": array of shape (n_models, n_questions, 1) with correctness scores
         - "Scenarios": dict mapping scenario names to lists of datapoint indices
         - "Models": dict mapping model names to local model indices
-    - chosen_scenarios: Optional list of scenario names. If None, uses all scenarios from source_outputs["Scenarios"]
 
     Returns:
-    - Dictionary mapping model names to dictionaries mapping scenario names to accuracies
+    - array of shape (n_models,) with true accuracies
     """
     # Extract scores from correctness (remove trailing dimension)
     scores = source_outputs["correctness"][
@@ -257,37 +258,35 @@ def compute_true_acc_v2(source_outputs, chosen_scenarios=None):
     # Get balance weights
     balance_weights = make_balance_weights(source_outputs)
 
-    # Get scenarios_position from source_outputs
-    scenarios_position = source_outputs["Scenarios"]
-
-    # Get chosen_scenarios if not provided
-    if chosen_scenarios is None:
-        chosen_scenarios = list(scenarios_position.keys())
-
     # Get model mapping
     models_map = source_outputs["Models"]  # model_name -> local_index
-    # Get all model indices (local indices), sorted to ensure consistent ordering
-    model_indices = sorted(models_map.values())
-    # Use indices as keys (matching the original compute_true_acc behavior)
-    model_keys_dict = {idx: idx for idx in model_indices}
 
-    # Compute accuracies using the same logic as compute_true_acc
-    accs_true = {}
-    # for j in model_indices:
-    #     accs_true[model_keys_dict[j]] = {}
-    #     for scenario in chosen_scenarios:
-    #         accs_true[model_keys_dict[j]][scenario] = (
-    #             (balance_weights[None, :] * scores)[
-    #                 j, scenarios_position[scenario]
-    #             ]
-    #         ).mean()
+    model_indices = list(models_map.values())
+    accs_true = np.zeros(len(model_indices))
     for j in model_indices:
-        accs_true[model_keys_dict[j]] = {}
-        for scenario in chosen_scenarios:
-            accs_true[model_keys_dict[j]][scenario] = (
-                (balance_weights[None, :] * scores)[j, :]
-            ).mean()
+        accs_true[j] = ((balance_weights[None, :] * scores)[j, :]).mean()
     return accs_true
+
+
+def compute_acc_knn_v2(
+    test_model_embedding,
+    train_model_embeddings,
+    # scenario,
+    train_model_true_accs,
+):
+    """
+    Compute the accuracy of the KNN estimator.
+    """
+
+    similarities = F.cosine_similarity(
+        test_model_embedding, train_model_embeddings, dim=1
+    )
+
+    # Get index of most similar embedding
+    most_similar_idx = torch.argmax(similarities).item()
+
+    # Return accuracy of most similar example
+    return train_model_true_accs[most_similar_idx]
 
 
 def compute_predicted_accs_v2(
@@ -295,12 +294,12 @@ def compute_predicted_accs_v2(
     fitted_weights,
     train_embeddings_v2,
     train_model_true_accs_new,
-    scenario,
+    # scenario,
     # rows_to_hide,
     target_id_to_model_name,
     sampling_name,
     number_item,
-    iterations,
+    # iterations,
     fitted_model_type,
 ):
     """
@@ -331,245 +330,176 @@ def compute_predicted_accs_v2(
 
     # target_id_to_model_name = {i: model_name for model_name, i in source_outputs["Models"].items()}
 
-    for seed in range(iterations):
-        fitted_model = predictors_per_seed[seed][fitted_model_type]
-        for target_model_idx in range(target_embeddings_v2.shape[0]):
-            test_model_embedding = target_embeddings_v2[target_model_idx]
+    # for seed in range(iterations):
+    # fitted_model = predictors_per_seed[seed][fitted_model_type]
+    fitted_model = predictors_per_seed[fitted_model_type]
+    for target_model_idx in range(target_embeddings_v2.shape[0]):
+        test_model_embedding = target_embeddings_v2[target_model_idx]
 
-            # Convert to numpy if it's a torch tensor
-            if isinstance(test_model_embedding, torch.Tensor):
-                test_model_embedding_np = test_model_embedding.numpy()
-            else:
-                test_model_embedding_np = test_model_embedding
+        # Convert to numpy if it's a torch tensor
+        if isinstance(test_model_embedding, torch.Tensor):
+            test_model_embedding_np = test_model_embedding.numpy()
+        else:
+            test_model_embedding_np = test_model_embedding
 
-            # Predict using fitted model
-            fitted_acc = fitted_model.predict(
-                test_model_embedding_np.reshape(1, -1)
-            )[0]
+        # Predict using fitted model
+        fitted_acc = fitted_model.predict(
+            test_model_embedding_np.reshape(1, -1)
+        )[0]
 
-            # Compute KNN accuracy
-            # Convert train_embeddings_v2 to torch tensor if needed for compute_acc_knn
-            if isinstance(train_embeddings_v2, torch.Tensor):
-                train_embeddings_v2_torch = train_embeddings_v2
-            else:
-                train_embeddings_v2_torch = torch.from_numpy(
-                    train_embeddings_v2
-                )
+        # Compute KNN accuracy
+        # Convert train_embeddings_v2 to torch tensor if needed for compute_acc_knn
+        if isinstance(train_embeddings_v2, torch.Tensor):
+            train_embeddings_v2_torch = train_embeddings_v2
+        else:
+            train_embeddings_v2_torch = torch.from_numpy(train_embeddings_v2)
 
-            if isinstance(test_model_embedding, torch.Tensor):
-                test_model_embedding_torch = test_model_embedding
-            else:
-                test_model_embedding_torch = torch.from_numpy(
-                    test_model_embedding_np
-                )
-
-            fitted_acc_knn = compute_acc_knn(
-                test_model_embedding=test_model_embedding_torch,
-                train_model_embeddings=train_embeddings_v2_torch,
-                scenario=scenario,
-                train_model_true_accs=train_model_true_accs_new,
+        if isinstance(test_model_embedding, torch.Tensor):
+            test_model_embedding_torch = test_model_embedding
+        else:
+            test_model_embedding_torch = torch.from_numpy(
+                test_model_embedding_np
             )
 
-            # target_model = rows_to_hide[target_model_idx]
-            target_model = target_id_to_model_name[target_model_idx]
-            if target_model not in predicted_accs_new:
-                predicted_accs_new[target_model] = []
-                predicted_accs_knn_new[target_model] = []
-            predicted_accs_new[target_model].append(fitted_acc)
-            predicted_accs_knn_new[target_model].append(fitted_acc_knn)
+        fitted_acc_knn = compute_acc_knn_v2(
+            test_model_embedding=test_model_embedding_torch,
+            train_model_embeddings=train_embeddings_v2_torch,
+            # scenario=scenario,
+            train_model_true_accs=train_model_true_accs_new,
+        )
+
+        # target_model = rows_to_hide[target_model_idx]
+        target_model = target_id_to_model_name[target_model_idx]
+        if target_model not in predicted_accs_new:
+            predicted_accs_new[target_model] = []
+            predicted_accs_knn_new[target_model] = []
+        predicted_accs_new[target_model].append(fitted_acc)
+        predicted_accs_knn_new[target_model].append(fitted_acc_knn)
 
     return predicted_accs_new, predicted_accs_knn_new
+
+
+def make_fitted_model_v2(config, logger=None):
+    (
+        builder,
+        sampling_name,
+        number_item,
+        # it,
+        cur_train_models_embeddings_np,
+        train_model_true_accs_np,
+        # fitted_weights,
+        model_name,
+    ) = (
+        config["builder"],
+        config["sampling_name"],
+        config["number_item"],
+        # config["it"],
+        config["cur_train_models_embeddings_np"],
+        config["train_model_true_accs_np"],
+        # config["fitted_weights"],
+        config["model_name"],
+    )
+    # skip_iterations_when_fixed_sampling = config.get(
+    #     "skip_iterations_when_fixed_sampling", True
+    # )
+    builder_func, builder_kwargs = builder
+    model = builder_func(**builder_kwargs)
+    # if (
+    #     skip_iterations_when_fixed_sampling
+    #     and sampling_name in ["high-disagreement", "low-disagreement"]
+    #     and "@" not in sampling_name
+    #     and it > 0
+    # ):
+    #     # for deterministic sampling fitted model does not change for different runs
+    #     fitted_model = deepcopy(
+    #         fitted_weights[sampling_name][number_item][0][f"{model_name}"]
+    #     )
+    # else:
+    fitted_model = model.fit(
+        cur_train_models_embeddings_np, train_model_true_accs_np
+    )
+    # when shape like (159, 102400), RandomForest200 can take 5+ min
+
+    # Compute training RMSE
+    train_preds = fitted_model.predict(cur_train_models_embeddings_np)
+    train_rmse = np.sqrt(np.mean((train_preds - train_model_true_accs_np) ** 2))
+
+    print(
+        f"Training RMSE of {model_name} for samplng={sampling_name}, n_anchor={number_item}: {train_rmse}"
+    )
+
+    return fitted_model
 
 
 def make_fitted_weights_v2(config, logger=None):
     (
         sampling_names,
         number_items,
-        iterations,
+        # iterations,
         train_models_embeddings,
         train_model_true_accs,
-        scenario,
+        # scenario,
         cache_path,
         chosen_fitting_methods,
     ) = (
         config["sampling_names"],
         config["number_items"],
-        config["iterations"],
+        # config["iterations"],
         config["train_models_embeddings"],
         config["train_model_true_accs"],
-        config["scenario"],
+        # config["scenario"],
         config["cache_path"],
         config["chosen_fitting_methods"],
     )
-    skip_iterations_when_fixed_sampling = config.get(
-        "skip_iterations_when_fixed_sampling", True
-    )
+    # skip_iterations_when_fixed_sampling = config.get(
+    #     "skip_iterations_when_fixed_sampling", True
+    # )
 
     fitted_weights = {}
 
     train_model_true_accs_np = np.array(
-        [
-            train_model_true_accs[i][scenario]
-            for i in range(len(train_model_true_accs))
-        ]
+        [train_model_true_accs[i] for i in range(len(train_model_true_accs))]
     )
 
     for sampling_name in sampling_names:
         fitted_weights[sampling_name] = {}
         for number_item in number_items:
             fitted_weights[sampling_name][number_item] = {}
-            for it in range(iterations):
-                # cur_train_models_embeddings_np = train_models_embeddings[
-                #     sampling_name
-                # ][number_item][it].numpy()
-                cur_train_models_embeddings_np = train_models_embeddings
+            # for it in range(iterations):
+            # cur_train_models_embeddings_np = train_models_embeddings[
+            #     sampling_name
+            # ][number_item][it].numpy()
+            cur_train_models_embeddings_np = train_models_embeddings
 
-                fitted_weights[sampling_name][number_item][it] = {}
+            # fitted_weights[sampling_name][number_item][it] = {}
 
-                for model_name, builder in chosen_fitting_methods:
-                    if cache_path is not None:
-                        cache_dir = cache_path.split(".")[0] + "_folder"
-                    else:
-                        cache_dir = None
-                    fitted_model = make_or_load_from_cache(
-                        object_name=f"fitted_model_{model_name}_{sampling_name}_{number_item}_{it}",
-                        object_config={
-                            "builder": builder,
-                            "sampling_name": sampling_name,
-                            "number_item": number_item,
-                            "it": it,
-                            "cur_train_models_embeddings_np": cur_train_models_embeddings_np,
-                            "train_model_true_accs_np": train_model_true_accs_np,
-                            "fitted_weights": fitted_weights,
-                            "model_name": model_name,
-                            "skip_iterations_when_fixed_sampling": skip_iterations_when_fixed_sampling,
-                        },
-                        make_func=make_fitted_model,
-                        cache_path=cache_dir,
-                    )
+            for model_name, builder in chosen_fitting_methods:
+                if cache_path is not None:
+                    cache_dir = cache_path.split(".")[0] + "_folder"
+                else:
+                    cache_dir = None
+                fitted_model = make_or_load_from_cache(
+                    object_name=f"fitted_model_{model_name}_{sampling_name}_{number_item}",
+                    object_config={
+                        "builder": builder,
+                        "sampling_name": sampling_name,
+                        "number_item": number_item,
+                        # "it": 0,
+                        "cur_train_models_embeddings_np": cur_train_models_embeddings_np,
+                        "train_model_true_accs_np": train_model_true_accs_np,
+                        # "fitted_weights": fitted_weights,
+                        "model_name": model_name,
+                        # "skip_iterations_when_fixed_sampling": skip_iterations_when_fixed_sampling,
+                    },
+                    make_func=make_fitted_model_v2,
+                    cache_path=cache_dir,
+                )
 
-                    fitted_weights[sampling_name][number_item][it][
-                        f"{model_name}"
-                    ] = fitted_model
+                fitted_weights[sampling_name][number_item][
+                    f"{model_name}"
+                ] = fitted_model
 
     return fitted_weights
-
-
-def load_or_make_outputs(target_cache_path, source_cache_path, save=False):
-    """
-    Load target/source outputs from disk if available; otherwise build from data and save.
-    """
-
-    if os.path.exists(target_cache_path) and os.path.exists(source_cache_path):
-        return (
-            load_pickle(target_cache_path),
-            load_pickle(source_cache_path),
-            None,
-            None,
-            None,
-            None,
-            None,
-        )
-
-    bench = "mmlu_fields"
-    data, scenarios, set_of_rows, data_path = load_and_split_model_outputs(
-        bench=bench,
-        split="noniid",
-        model_outputs_path=MODEL_OUTPUTS_PATH,
-        text_to_vector=None,
-        return_data_path=True,
-        subsample_validation=False,
-    )
-
-    chosen_scenarios = list(scenarios.keys())
-    all_predictions = create_predictions(chosen_scenarios, scenarios, data)
-    all_correctness = create_responses(chosen_scenarios, scenarios, data)[
-        :, :, None
-    ]  # add trailing dim (N, Q, 1)
-
-    # recover scenario/subscenario positions for metadata
-    (
-        _scores_train_tmp,
-        _predictions_train_tmp,
-        _predictions_test_tmp,
-        _scores_test_tmp,
-        balance_weights_tmp,
-        scenarios_position_tmp,
-        subscenarios_position_tmp,
-    ) = prepare_and_split_data(
-        chosen_scenarios,
-        scenarios,
-        data,
-        rows_to_hide=set_of_rows[0],
-        n_source_models=None,
-    )
-
-    def build_outputs_dict(model_indices):
-        preds = all_predictions[model_indices]
-        corr = all_correctness[model_indices]
-        models_map = {
-            data["models"][orig_idx]: local_idx
-            for local_idx, orig_idx in enumerate(model_indices)
-        }
-        datapoints_map = {dp_idx: dp_idx for dp_idx in range(preds.shape[1])}
-        # scenarios_map = {
-        #     # scenario: list(scenarios_position_tmp[scenario])
-        #     # for scenario in scenarios_position_tmp
-        #     scenario: list(subscenarios_position_tmp[scenario])
-        #     for scenario in subscenarios_position_tmp
-        # }
-        scenarios_map = subscenarios_position_tmp[
-            "mmlu"
-        ]  # scenario name -> list of datapoints from it
-        return {
-            "predictions": preds,
-            "correctness": corr,
-            "Models": models_map,
-            "Datapoints": datapoints_map,
-            "Scenarios": scenarios_map,  # map: scenario name -> list of datapoints from it
-        }
-
-    target_model_indices = set_of_rows[0]
-    source_model_indices = [
-        i
-        for i in range(all_predictions.shape[0])
-        if i not in target_model_indices
-    ]
-
-    target_outputs = build_outputs_dict(target_model_indices)
-    source_outputs = build_outputs_dict(source_model_indices)
-
-    (
-        scenarios_new,
-        chosen_scenarios_new,
-        subscenarios_position_new,
-    ) = derive_scenario_metadata(source_outputs, chosen_scenarios=["mmlu"])
-    assert scenarios == scenarios_new
-    assert chosen_scenarios == chosen_scenarios_new
-    # assert subscenarios_position_tmp == subscenarios_position_new
-    # assert scenarios_position_tmp == scenarios_position_new
-    assert subscenarios_position_tmp == subscenarios_position_new
-
-    balance_weights = make_balance_weights(source_outputs)
-    # assert _structures_equal(balance_weights, balance_weights_tmp), "balance_weights differ"
-    assert np.allclose(
-        balance_weights, balance_weights_tmp
-    ), "balance_weights differ"
-
-    if save:
-        os.makedirs(os.path.dirname(target_cache_path), exist_ok=True)
-        dump_pickle(target_outputs, target_cache_path)
-        dump_pickle(source_outputs, source_cache_path)
-
-    return (
-        target_outputs,
-        source_outputs,
-        data,
-        scenarios,
-        set_of_rows,
-        data_path,
-        bench,
-    )
 
 
 def main():
@@ -800,7 +730,6 @@ def main():
 
     train_model_true_accs_new = compute_true_acc_v2(
         source_outputs,
-        chosen_scenarios=["mmlu"],
     )
     # assert _structures_equal(
     #     train_model_true_accs, train_model_true_accs_new
@@ -818,18 +747,18 @@ def main():
             (sklearn.ensemble.RandomForestRegressor, {"n_estimators": 100}),
         )
     ]
-    scenario = bench.split("_")[0]
+    # scenario = bench.split("_")[0]
     fitted_weights = make_fitted_weights_v2(
         config={
             "sampling_names": sampling_names,
             "number_items": number_items,
-            "iterations": iterations,
+            # "iterations": iterations,
             "train_models_embeddings": train_embeddings_v2,
             "train_model_true_accs": train_model_true_accs_new,
-            "scenario": scenario,
+            # "scenario": scenario,
             "cache_path": "cache/fitted_weights.",  # dot for legacy reasons
             "chosen_fitting_methods": chosen_fitting_methods,
-            "skip_iterations_when_fixed_sampling": False,
+            # "skip_iterations_when_fixed_sampling": False,
         },
         # cache_path="./cache",
         # forward_cache_path=True,
@@ -888,11 +817,11 @@ def main():
         fitted_weights=fitted_weights,
         train_embeddings_v2=train_embeddings_v2,
         train_model_true_accs_new=train_model_true_accs_new,
-        scenario=scenario,
+        # scenario=scenario,
         target_id_to_model_name=target_id_to_model_name,
         sampling_name=sampling_name,
         number_item=number_item,
-        iterations=iterations,
+        # iterations=iterations,
         fitted_model_type=fitted_model_type,
     )
     # assert _structures_equal(

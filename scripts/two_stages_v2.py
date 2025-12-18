@@ -301,6 +301,7 @@ def compute_predicted_accs_v2(
     number_item,
     # iterations,
     fitted_model_type,
+    # items_weights,
 ):
     """
     Compute predicted_accs_new and predicted_accs_knn_new using target_embeddings_v2 and fitted_weights.
@@ -628,6 +629,23 @@ def main():
         random_seed=RANDOM_SEED,
     )
     item_weights_new, anchor_points_new = samples_v2
+    samples_v2_random = sample_items_v2(
+        number_item=number_item,
+        # iterations=iterations,
+        sampling_name="random",
+        source_outputs=source_outputs,
+        # target_model_count=len(rows_to_hide),
+        # chosen_scenarios=chosen_scenarios,
+        # scenarios=scenarios,
+        # subscenarios_position=subscenarios_position,
+        # scenarios_position=scenarios_position,
+        # balance_weights=balance_weights,
+        random_seed=RANDOM_SEED,
+    )
+    (
+        item_weights_new_random,
+        anchor_points_new_random_stratified,
+    ) = samples_v2_random
     # assert _structures_equal(
     #     item_weights_old[0]["mmlu"], item_weights_new["all"]
     # ), "item_weights differ"
@@ -647,7 +665,7 @@ def main():
     # )
 
     pca = 256
-    apply_softmax_to_predictions = True
+    # apply_softmax_to_predictions = True
     # (
     #     train_models_embeddings,
     #     test_models_embeddings,
@@ -823,7 +841,34 @@ def main():
         number_item=number_item,
         # iterations=iterations,
         fitted_model_type=fitted_model_type,
+        # items_weights=item_weights_new,
     )
+
+    def _compute_naive_accuracies(
+        scores,
+        item_weights_new,
+        item_weights_new_random,
+        anchor_points_new,
+        anchor_points_new_random_stratified,
+        random_anchors,
+        target_model_idx,
+    ):
+        """Compute disagreement, random, and stratified-random naive accuracies for a target model."""
+        disagreement_naive_acc = (
+            item_weights_new["all"]
+            * scores[target_model_idx][anchor_points_new]
+        ).sum()
+        stratified_random_naive_acc = (
+            item_weights_new_random["all"]
+            * scores[target_model_idx][anchor_points_new_random_stratified]
+        ).sum()
+        random_naive_acc = scores[target_model_idx][random_anchors].mean()
+        return (
+            disagreement_naive_acc,
+            random_naive_acc,
+            stratified_random_naive_acc,
+        )
+
     # assert _structures_equal(
     #     predicted_accs, predicted_accs_new
     # ), "predicted_accs differ"
@@ -865,15 +910,86 @@ def main():
     balance_weights_new = make_balance_weights(target_outputs)
     correctness_new = target_outputs["correctness"][..., 0]
     scores = correctness_new * balance_weights_new
+
+    predicted_accs_disagreement_naive_new = {}
+    predicted_accs_random_naive_new = {}
+    predicted_accs_stratified_random_naive_new = {}
+
+    predicted_accs_disagreement_naive_corr_new = {}
+    predicted_accs_stratified_random_naive_corr_new = {}
+    predicted_accs_random_naive_corr_new = {}
+
+    random_anchors = np.random.choice(
+        list(range(len(scores[0]))), size=number_item, replace=False
+    )
     for target_model_name in target_outputs["Models"].keys():
         target_model_idx = target_outputs["Models"][target_model_name]
         gt_scores_new[target_model_name] = scores[target_model_idx].mean()
+
+        (
+            disagreement_naive_acc,
+            random_naive_acc,
+            stratified_random_naive_acc,
+        ) = _compute_naive_accuracies(
+            scores=scores,
+            item_weights_new=item_weights_new,
+            item_weights_new_random=item_weights_new_random,
+            anchor_points_new=anchor_points_new,
+            anchor_points_new_random_stratified=anchor_points_new_random_stratified,
+            random_anchors=random_anchors,
+            target_model_idx=target_model_idx,
+        )
+
+        predicted_accs_disagreement_naive_new[target_model_name] = [
+            disagreement_naive_acc
+        ]
+        predicted_accs_stratified_random_naive_new[target_model_name] = [
+            stratified_random_naive_acc
+        ]
+        predicted_accs_random_naive_new[target_model_name] = [random_naive_acc]
+
+        (
+            disagreement_naive_acc_corr,
+            random_naive_acc_corr,
+            stratified_random_naive_acc_corr,
+        ) = _compute_naive_accuracies(
+            scores=correctness_new,
+            item_weights_new=item_weights_new,
+            item_weights_new_random=item_weights_new_random,
+            anchor_points_new=anchor_points_new,
+            anchor_points_new_random_stratified=anchor_points_new_random_stratified,
+            random_anchors=random_anchors,
+            target_model_idx=target_model_idx,
+        )
+
+        predicted_accs_disagreement_naive_corr_new[target_model_name] = [
+            disagreement_naive_acc_corr
+        ]
+        predicted_accs_stratified_random_naive_corr_new[target_model_name] = [
+            stratified_random_naive_acc_corr
+        ]
+        predicted_accs_random_naive_corr_new[target_model_name] = [
+            random_naive_acc_corr
+        ]
+
+    # for target_model_name in target_outputs["Models"].keys():
+    #     naive_acc = (
+    #         item_weights_new[scenario]
+    #         * gt_scores_new[j][selected_indices]
+    #     ).sum()
+    #     predictions_new["naive"][target_model_name] = naive_acc
 
     maes_per_method_new = {}
     rank_corrs_per_method_new = {}
     predictions_new = {
         "fitted": predicted_accs_new,
         "knn": predicted_accs_knn_new,
+        "disagreement+naive": predicted_accs_disagreement_naive_new,
+        "stratified_random+naive": predicted_accs_stratified_random_naive_new,
+        "random+naive": predicted_accs_random_naive_new,
+        "disagreement+naive+corr": predicted_accs_disagreement_naive_corr_new,
+        "stratified_random+naive+corr": predicted_accs_stratified_random_naive_corr_new,
+        "random+naive+corr": predicted_accs_random_naive_corr_new,
     }
     gt_scores_new_np = np.stack(
         [

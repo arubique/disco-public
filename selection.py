@@ -166,11 +166,14 @@ def jsd(logits):
 def get_disagreement_scores(
     predictions_train, n_guiding_models, disagreement_type="pds"
 ):
+    guiding_models_indices = None
     if n_guiding_models is not None:
         guiding_models_indices = np.random.choice(
             predictions_train.shape[0], n_guiding_models, replace=False
         )
         predictions_train = predictions_train[guiding_models_indices, ...]
+    if guiding_models_indices is not None:
+        print("Guiding models indices: ", guiding_models_indices)
     if disagreement_type == "pds":
         scores_per_sample = pds(torch.Tensor(predictions_train))
     elif disagreement_type == "jsd":
@@ -627,6 +630,7 @@ def sample_items(
     skip_irt=False,
 ):
     assert "adaptive" not in sampling_name
+    print("Sampling name: ", sampling_name)
 
     if skip_irt and sampling_name == "anchor-irt":
         raise NotImplementedError
@@ -700,6 +704,8 @@ def sample_items(
 
     end_time = time.time()
     elapsed_time = (end_time - start_time) / iterations
+
+    print("SEEN ITEMS: ", seen_items_dic)
 
     return item_weights_dic, seen_items_dic, unseen_items_dic, elapsed_time
 

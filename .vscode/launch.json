@@ -45,7 +45,7 @@
                 // "_disagreement_best_47",
                 "_debug",
                 "--cache_path",
-                "/home/oh/arubinstein17/github/disco-public/cache/debug_cache_1812",
+                "/home/oh/arubinstein17/github/disco-public/debug_cache/cache_2312",
                 "--iterations",
                 "5",
                 "--num_workers",
@@ -58,12 +58,13 @@
                 // "random,high-disagreement,low-disagreement,low-disagreement@2,high-disagreement@2,low-disagreement@10,high-disagreement@10,low-disagreement@100,high-disagreement@100,high-disagreement+nonstratified,low-disagreement+nonstratified,low-disagreement@2+nonstratified,high-disagreement@2+nonstratified,low-disagreement@10+nonstratified,high-disagreement@10+nonstratified,low-disagreement@100+nonstratified,high-disagreement@100+nonstratified",
                 "random,high-disagreement@10",
                 "--split",
-                "iid",
+                "noniid",
                 "--skip_irt",
                 "--make_results_table"
             ],
             "env": {
-                "PROJECT_ROOT_PROVIDED_FOR_STUNED": "."
+                "PROJECT_ROOT_PROVIDED_FOR_STUNED": ".",
+                "DEBUG": "1"
             }
         },
         {

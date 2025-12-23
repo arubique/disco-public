@@ -427,6 +427,7 @@ def main():
         pickle.dump(sampling_time_dic, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     if args.make_results_table:
+        print("MAE results:")
         table_avg, table_std = make_table_avg(
             bench,
             split,
@@ -435,6 +436,24 @@ def main():
             scenarios_to_skip=SCENARIOS_TO_SKIP,
             num_it=iterations,
             data_path=data_path,
+        )
+        make_results_table(
+            table_avg,
+            table_std,
+            bench,
+            args.results_table_path,
+            split,
+        )
+        print("Rank results:")
+        table_avg, table_std = make_table_avg(
+            bench,
+            split,
+            filename_suffix,
+            accs_full,
+            scenarios_to_skip=SCENARIOS_TO_SKIP,
+            num_it=iterations,
+            data_path=data_path,
+            agg_type="rank",
         )
         make_results_table(
             table_avg,

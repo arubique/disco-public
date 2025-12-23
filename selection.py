@@ -9,6 +9,7 @@ from tqdm import tqdm
 import time
 import torch
 import torch.nn.functional as F
+import os
 
 # from irt import *
 from irt import estimate_ability_parameters
@@ -264,6 +265,110 @@ def sample_by_disagreement(
                 seen_items = sorted_by_disagreement[-number_item:]
             else:
                 seen_items = []
+
+    if os.environ.get("DEBUG"):
+        seen_items = [
+            41,
+            55,
+            220,
+            231,
+            362,
+            274,
+            391,
+            403,
+            505,
+            617,
+            831,
+            803,
+            947,
+            966,
+            1068,
+            1055,
+            1107,
+            1149,
+            1350,
+            1215,
+            1424,
+            1468,
+            1523,
+            1494,
+            1700,
+            1665,
+            1831,
+            1832,
+            1985,
+            2039,
+            2276,
+            2413,
+            2521,
+            2547,
+            2630,
+            2637,
+            2709,
+            2945,
+            3054,
+            2995,
+            3236,
+            3258,
+            3289,
+            3443,
+            3642,
+            3547,
+            3822,
+            3732,
+            3945,
+            4115,
+            4430,
+            4424,
+            4539,
+            4499,
+            4783,
+            4824,
+            5372,
+            5066,
+            5458,
+            5459,
+            5753,
+            5775,
+            6022,
+            6017,
+            6098,
+            6263,
+            6418,
+            6433,
+            6477,
+            6490,
+            6665,
+            6614,
+            6741,
+            6672,
+            6919,
+            6878,
+            7028,
+            7016,
+            7266,
+            7103,
+            7366,
+            7364,
+            7836,
+            7472,
+            8485,
+            8221,
+            9053,
+            9627,
+            9730,
+            10118,
+            10372,
+            12094,
+            12248,
+            12726,
+            13138,
+            13322,
+            13568,
+            13674,
+            13776,
+            14024,
+        ]
     for scenario in scenarios_choosen:
         item_weights[scenario] = np.ones(number_item) / number_item
 
@@ -705,7 +810,10 @@ def sample_items(
     end_time = time.time()
     elapsed_time = (end_time - start_time) / iterations
 
-    print("SEEN ITEMS: ", seen_items_dic)
+    print(
+        f"SEEN ITEMS: for num_items={number_item} and sampling_name={sampling_name}",
+        seen_items_dic,
+    )
 
     return item_weights_dic, seen_items_dic, unseen_items_dic, elapsed_time
 

@@ -19,11 +19,11 @@
             "console": "integratedTerminal",
             "args": [
                 "--source_model_outputs_path",
-                "/home/oh/arubinstein17/github/disco-public/data/model_outputs/mmlu/source_outputs.pkl",
-                // "/home/oh/arubinstein17/github/disco-public/data/model_outputs/hellaswag/source_outputs.pkl",
+                // "/home/oh/arubinstein17/github/disco-public/data/model_outputs/mmlu/source_outputs.pkl",
+                "/home/oh/arubinstein17/github/disco-public/data/model_outputs/hellaswag/source_outputs.pkl",
                 "--target_model_outputs_path",
-                "/home/oh/arubinstein17/github/disco-public/data/model_outputs/mmlu/target_outputs.pkl"
-                // "/home/oh/arubinstein17/github/disco-public/data/model_outputs/hellaswag/target_outputs.pkl"
+                // "/home/oh/arubinstein17/github/disco-public/data/model_outputs/mmlu/target_outputs.pkl"
+                "/home/oh/arubinstein17/github/disco-public/data/model_outputs/hellaswag/target_outputs.pkl"
             ]
         },
         {

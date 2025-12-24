@@ -165,13 +165,20 @@ def jsd(logits):
 
 
 def get_disagreement_scores(
-    predictions_train, n_guiding_models, disagreement_type="pds"
+    predictions_train,
+    n_guiding_models,
+    disagreement_type="pds",
+    guiding_models=None,
 ):
     guiding_models_indices = None
     if n_guiding_models is not None:
-        guiding_models_indices = np.random.choice(
-            predictions_train.shape[0], n_guiding_models, replace=False
-        )
+        if guiding_models is not None:
+            assert len(guiding_models) == n_guiding_models
+            guiding_models_indices = guiding_models
+        else:
+            guiding_models_indices = np.random.choice(
+                predictions_train.shape[0], n_guiding_models, replace=False
+            )
         predictions_train = predictions_train[guiding_models_indices, ...]
     if guiding_models_indices is not None:
         print("Guiding models indices: ", guiding_models_indices)

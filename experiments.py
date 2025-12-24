@@ -373,6 +373,7 @@ def evaluate_scenarios(
                 "sampling_names": sampling_names,
                 "predictions_train": predictions_train,
                 "disagreement_type": disagreement_type,
+                "guiding_models": None,
             },
             make_func=make_disagreement_scores_dict,
             cache_path=disagreement_scores_cache_path,
@@ -856,10 +857,12 @@ def make_disagreement_scores_dict(config, logger=None):
         sampling_names,
         predictions_train,
         disagreement_type,
+        guiding_models,
     ) = (
         config["sampling_names"],
         config["predictions_train"],
         config["disagreement_type"],
+        config["guiding_models"],
     )
     disagreement_scores_dict = {}
     for sampling_name in sampling_names:
@@ -869,6 +872,7 @@ def make_disagreement_scores_dict(config, logger=None):
         if "@" in disagreement_key:
             n_guiding_models = int(sampling_name.split("@")[1].split("+")[0])
         else:
+            assert guiding_models is None
             n_guiding_models = None
         if not disagreement_key in disagreement_scores_dict:
             disagreement_scores_dict[
@@ -877,5 +881,6 @@ def make_disagreement_scores_dict(config, logger=None):
                 predictions_train,
                 n_guiding_models,
                 disagreement_type=disagreement_type,
+                guiding_models=guiding_models,
             )
     return disagreement_scores_dict

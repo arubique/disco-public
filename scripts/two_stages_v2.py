@@ -74,6 +74,7 @@ def sample_items_v2(
     # scenarios_position,
     # balance_weights,
     random_seed,
+    guiding_models=None,
 ):
     """
     Convenience wrapper to sample items without using target_outputs.
@@ -111,6 +112,7 @@ def sample_items_v2(
             "sampling_names": [sampling_name],
             "predictions_train": predictions_train,
             "disagreement_type": "pds",
+            "guiding_models": guiding_models,
         }
     )
 
@@ -571,21 +573,21 @@ def main():
 
     predictions_train = source_outputs["predictions"]
 
-    sampling_names = ["high-disagreement"]
-    disagreement_type = "pds"
-    disagreement_scores_dict = make_disagreement_scores_dict(
-        config={
-            "sampling_names": sampling_names,
-            "predictions_train": predictions_train,
-            "disagreement_type": disagreement_type,
-        }
-    )
+    sampling_names = ["high-disagreement@100+nonstratified"]
+    # disagreement_type = "pds"
+    # disagreement_scores_dict = make_disagreement_scores_dict(
+    #     config={
+    #         "sampling_names": sampling_names,
+    #         "predictions_train": predictions_train,
+    #         "disagreement_type": disagreement_type,
+    #     }
+    # )
 
     number_items = [100]
-    iterations = 1
+    # iterations = 1
     sampling_name = sampling_names[0]
     number_item = number_items[0]
-    seen_items_dic = {sampling_name: {}}
+    # seen_items_dic = {sampling_name: {}}
     apply_random_seed(RANDOM_SEED)
     # samples = sample_items(
     #     number_item,
@@ -615,6 +617,109 @@ def main():
     # global SAMPLING_ITERATIONS
     # SAMPLING_ITERATIONS = iterations
 
+    guiding_models = [
+        13,
+        309,
+        100,
+        238,
+        251,
+        287,
+        384,
+        365,
+        179,
+        3,
+        353,
+        221,
+        340,
+        202,
+        332,
+        134,
+        213,
+        44,
+        185,
+        257,
+        82,
+        60,
+        186,
+        247,
+        112,
+        39,
+        111,
+        342,
+        15,
+        102,
+        167,
+        151,
+        30,
+        28,
+        253,
+        279,
+        139,
+        195,
+        249,
+        29,
+        147,
+        189,
+        103,
+        16,
+        95,
+        87,
+        317,
+        22,
+        258,
+        5,
+        108,
+        154,
+        61,
+        114,
+        172,
+        57,
+        37,
+        348,
+        110,
+        138,
+        316,
+        323,
+        301,
+        383,
+        169,
+        303,
+        115,
+        12,
+        78,
+        271,
+        210,
+        318,
+        232,
+        176,
+        149,
+        308,
+        243,
+        211,
+        339,
+        239,
+        209,
+        314,
+        23,
+        74,
+        40,
+        127,
+        159,
+        66,
+        137,
+        290,
+        182,
+        104,
+        358,
+        299,
+        226,
+        56,
+        234,
+        188,
+        272,
+        254,
+    ]
+
     samples_v2 = sample_items_v2(
         number_item=number_item,
         # iterations=iterations,
@@ -627,6 +732,7 @@ def main():
         # scenarios_position=scenarios_position,
         # balance_weights=balance_weights,
         random_seed=RANDOM_SEED,
+        guiding_models=guiding_models,
     )
     item_weights_new, anchor_points_new = samples_v2
     samples_v2_random = sample_items_v2(

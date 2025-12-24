@@ -23,3 +23,4 @@ df_100.csv
 disagreement_scores_per_strata
 default_df_run_experiment.csv
 *.lock
+cache*

@@ -44,6 +44,113 @@ SAMPLING_ITERATIONS = None
 DEFAULT_SCENARIO = "all"
 
 
+MMLU_100_GUIDING_MODELS = [
+    13,
+    309,
+    100,
+    238,
+    251,
+    287,
+    384,
+    365,
+    179,
+    3,
+    353,
+    221,
+    340,
+    202,
+    332,
+    134,
+    213,
+    44,
+    185,
+    257,
+    82,
+    60,
+    186,
+    247,
+    112,
+    39,
+    111,
+    342,
+    15,
+    102,
+    167,
+    151,
+    30,
+    28,
+    253,
+    279,
+    139,
+    195,
+    249,
+    29,
+    147,
+    189,
+    103,
+    16,
+    95,
+    87,
+    317,
+    22,
+    258,
+    5,
+    108,
+    154,
+    61,
+    114,
+    172,
+    57,
+    37,
+    348,
+    110,
+    138,
+    316,
+    323,
+    301,
+    383,
+    169,
+    303,
+    115,
+    12,
+    78,
+    271,
+    210,
+    318,
+    232,
+    176,
+    149,
+    308,
+    243,
+    211,
+    339,
+    239,
+    209,
+    314,
+    23,
+    74,
+    40,
+    127,
+    159,
+    66,
+    137,
+    290,
+    182,
+    104,
+    358,
+    299,
+    226,
+    56,
+    234,
+    188,
+    272,
+    254,
+]
+
+# HELLASWAG_10_GUIDING_MODELS = [142, 324, 97, 194, 109, 287, 281, 330, 152, 80]
+HELLASWAG_10_GUIDING_MODELS = [235, 246, 117, 70, 287, 323, 149, 329, 150, 189]
+
+
 def derive_scenario_metadata(
     source_outputs, chosen_scenarios=[DEFAULT_SCENARIO]
 ):
@@ -506,7 +613,7 @@ def make_fitted_weights_v2(config, logger=None):
 
 
 def main():
-    bench = "mmlu_fields"
+    # bench = "mmlu_fields"
     # data, scenarios, set_of_rows, data_path = load_and_split_model_outputs(
     #     bench=bench,
     #     split="noniid",
@@ -571,9 +678,23 @@ def main():
     #     n_source_models=None,
     # )
 
-    predictions_train = source_outputs["predictions"]
+    # predictions_train = source_outputs["predictions"]
 
-    sampling_names = ["high-disagreement@100+nonstratified"]
+    # # if bench == "mmlu":
+    #     guiding_models = MMLU_100_GUIDING_MODELS
+    # elif bench == "hellaswag":
+    #     guiding_models = HELLASWAG_100_GUIDING_MODELS
+    # else:
+    #     raise ValueError(f"Unsupported benchmark: {bench}")
+
+    # guiding_models = HELLASWAG_100_GUIDING_MODELS
+    # sampling_names = ["high-disagreement@100"]
+    guiding_models = HELLASWAG_10_GUIDING_MODELS
+    sampling_names = ["high-disagreement@10+nonstratified"]
+
+    # guiding_models = MMLU_100_GUIDING_MODELS
+    # sampling_names = ["high-disagreement@100+nonstratified"]
+
     # disagreement_type = "pds"
     # disagreement_scores_dict = make_disagreement_scores_dict(
     #     config={
@@ -616,109 +737,6 @@ def main():
     # expose iterations to the simplified sampler
     # global SAMPLING_ITERATIONS
     # SAMPLING_ITERATIONS = iterations
-
-    guiding_models = [
-        13,
-        309,
-        100,
-        238,
-        251,
-        287,
-        384,
-        365,
-        179,
-        3,
-        353,
-        221,
-        340,
-        202,
-        332,
-        134,
-        213,
-        44,
-        185,
-        257,
-        82,
-        60,
-        186,
-        247,
-        112,
-        39,
-        111,
-        342,
-        15,
-        102,
-        167,
-        151,
-        30,
-        28,
-        253,
-        279,
-        139,
-        195,
-        249,
-        29,
-        147,
-        189,
-        103,
-        16,
-        95,
-        87,
-        317,
-        22,
-        258,
-        5,
-        108,
-        154,
-        61,
-        114,
-        172,
-        57,
-        37,
-        348,
-        110,
-        138,
-        316,
-        323,
-        301,
-        383,
-        169,
-        303,
-        115,
-        12,
-        78,
-        271,
-        210,
-        318,
-        232,
-        176,
-        149,
-        308,
-        243,
-        211,
-        339,
-        239,
-        209,
-        314,
-        23,
-        74,
-        40,
-        127,
-        159,
-        66,
-        137,
-        290,
-        182,
-        104,
-        358,
-        299,
-        226,
-        56,
-        234,
-        188,
-        272,
-        254,
-    ]
 
     samples_v2 = sample_items_v2(
         number_item=number_item,

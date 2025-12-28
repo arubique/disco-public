@@ -689,8 +689,11 @@ def main():
 
     # guiding_models = HELLASWAG_100_GUIDING_MODELS
     # sampling_names = ["high-disagreement@100"]
-    guiding_models = HELLASWAG_10_GUIDING_MODELS
-    sampling_names = ["high-disagreement@10+nonstratified"]
+    # guiding_models = HELLASWAG_10_GUIDING_MODELS
+    # sampling_names = ["high-disagreement@10+nonstratified"]
+
+    guiding_models = None
+    sampling_names = ["high-disagreement+nonstratified"]
 
     # guiding_models = MMLU_100_GUIDING_MODELS
     # sampling_names = ["high-disagreement@100+nonstratified"]

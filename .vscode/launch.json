@@ -5,6 +5,23 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Predict Model Performance",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/predict_model_performance.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--prediction_path",
+                "/home/oh/arubinstein17/github/disco-public/data/model_outputs/hellaswag/local_predictions.pkl",
+                "--model_path",
+                "/home/oh/arubinstein17/github/disco-public/data/model_outputs/hellaswag/fitted_weights.pkl",
+                "--transform_path",
+                "/home/oh/arubinstein17/github/disco-public/data/model_outputs/hellaswag/transform.pkl",
+                "--pca",
+                "256"
+            ]
+        },
+        {
             "name": "Run Two Stages",
             "type": "debugpy",
             "request": "launch",
@@ -21,13 +38,20 @@
                 "--source_model_outputs_path",
                 // "/home/oh/arubinstein17/github/disco-public/data/model_outputs/mmlu/source_outputs.pkl",
                 "/home/oh/arubinstein17/github/disco-public/data/model_outputs/hellaswag/source_outputs.pkl",
+                "--anchors_save_path",
+                "/home/oh/arubinstein17/github/disco-public/data/model_outputs/hellaswag/anchor_points_disagreement.pkl",
+                "--weights_save_path",
+                "/home/oh/arubinstein17/github/disco-public/data/model_outputs/hellaswag/fitted_weights.pkl",
+                "--transform_save_path",
+                "/home/oh/arubinstein17/github/disco-public/data/model_outputs/hellaswag/transform.pkl",
                 "--target_model_outputs_path",
                 // "/home/oh/arubinstein17/github/disco-public/data/model_outputs/mmlu/target_outputs.pkl"
                 // "/home/oh/arubinstein17/github/disco-public/data/model_outputs/hellaswag/target_outputs.pkl"
                 // "/home/oh/arubinstein17/github/disco-public/data/model_outputs/hellaswag/target_outputs_from_notebook_0801.pkl"
                 // "/home/oh/arubinstein17/github/disco-public/data/model_outputs/hellaswag/target_outputs_from_notebook_pad_to_size.pkl"
                 // "/home/oh/arubinstein17/github/disco-public/data/model_outputs/hellaswag/target_outputs_from_notebook_lm_harness_pad_to_size.pkl"
-                "/home/oh/arubinstein17/github/disco-public/data/model_outputs/hellaswag/target_outputs_from_notebook_lm_harness_pad_to_size_acc_norm.pkl"
+                "/home/oh/arubinstein17/github/disco-public/data/model_outputs/hellaswag/target_outputs_from_notebook_lm_harness_pad_to_size_acc_norm.pkl",
+                // "/home/oh/arubinstein17/github/disco-public/data/model_outputs/hellaswag/target_outputs_from_notebook_lm_harness_pad_to_size_acc_norm_only_100.pkl"
             ]
         },
         {

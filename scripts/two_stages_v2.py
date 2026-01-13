@@ -636,6 +636,24 @@ def main():
         default=None,
         help="Path to the target model outputs file",
     )
+    parser.add_argument(
+        "--anchors_save_path",
+        type=str,
+        default=None,
+        help="Path to save anchor_points_new",
+    )
+    parser.add_argument(
+        "--weights_save_path",
+        type=str,
+        default=None,
+        help="Path to save fitted_weights",
+    )
+    parser.add_argument(
+        "--transform_save_path",
+        type=str,
+        default=None,
+        help="Path to save transform_v2",
+    )
     args = parser.parse_args()
 
     # cache_dir = os.path.join(ROOT_PATH, "cache")
@@ -826,6 +844,10 @@ def main():
     # ), "train_embeddings_v2 differ"
 
     predictions_test_v2 = target_outputs["predictions"][:, anchor_points_new, :]
+
+    if args.anchors_save_path is not None:
+        dump_pickle(anchor_points_new, args.anchors_save_path)
+
     target_embeddings_v2, _ = compute_embedding(
         predictions_test_v2,
         anchor_indices=None,
@@ -833,6 +855,10 @@ def main():
         transform=transform_v2,
         apply_softmax=True,
     )
+
+    if args.transform_save_path is not None:
+        dump_pickle(transform_v2, args.transform_save_path)
+
     # assert np.allclose(
     #     target_embeddings_v2,
     #     test_models_embeddings[sampling_name][number_item][0],
@@ -908,6 +934,9 @@ def main():
         # cache_path="./cache",
         # forward_cache_path=True,
     )
+
+    if args.weights_save_path is not None:
+        dump_pickle(fitted_weights, args.weights_save_path)
 
     # make_or_load_from_cache(
     #     object_name="fitted_weights",
@@ -1118,6 +1147,15 @@ def main():
         "stratified_random+naive+corr": predicted_accs_stratified_random_naive_corr_new,
         "random+naive+corr": predicted_accs_random_naive_corr_new,
     }
+
+    print("Predicted accuracies:")
+    for model_idx, target_model_name in enumerate(
+        target_outputs["Models"].keys()
+    ):
+        if target_model_name in predicted_accs_new:
+            accuracy = predicted_accs_new[target_model_name][0]
+            print(f"Model {model_idx}: {accuracy:.6f}")
+
     gt_scores_new_np = np.stack(
         [
             gt_scores_new[target_model_idx]

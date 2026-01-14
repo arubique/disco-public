@@ -22,6 +22,7 @@
                 "--tasks=hellaswag_prompts",
                 "--anchor_points_path=/home/oh/arubinstein17/github/disco-public/data/model_outputs/hellaswag/anchor_points_disagreement.pkl",
                 "--log_samples",
+                "--skip_non_anchor_points"
             ]
         },
         {

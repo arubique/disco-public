@@ -19,7 +19,9 @@ Example usage (from the repository root):
 from __future__ import annotations
 
 import sys
+import os
 import argparse
+import json
 from pathlib import Path
 
 # Add repo root to path for imports
@@ -128,6 +130,14 @@ def main() -> None:
         default=None,
         help="Path to save target_outputs.pkl. If None, uses default based on scenario.",
     )
+    parser.add_argument(
+        "--skip_non_anchor_points",
+        action="store_true",
+        help=(
+            "If set, restrict evaluation to the datapoints indexed by anchor_points "
+            "while keeping few-shot examples unchanged."
+        ),
+    )
 
     # Parse arguments (this will include our custom args)
     args = parse_eval_args(parser)
@@ -137,6 +147,7 @@ def main() -> None:
     metric = args.metric
     pad_to_size = args.pad_to_size
     target_outputs_path = args.target_outputs_path
+    skip_non_anchor_points = args.skip_non_anchor_points
 
     # Create a copy of args without our custom attributes for cli_evaluate
     # We'll create a new namespace with only the standard lm_eval arguments
@@ -152,9 +163,55 @@ def main() -> None:
         delattr(args_for_eval, "pad_to_size")
     if hasattr(args_for_eval, "target_outputs_path"):
         delattr(args_for_eval, "target_outputs_path")
+    if hasattr(args_for_eval, "skip_non_anchor_points"):
+        delattr(args_for_eval, "skip_non_anchor_points")
 
-    # Run the evaluation
-    cli_evaluate(args_for_eval)
+    samples_file: Path | None = None
+
+    # If requested, restrict evaluation to anchor points using the `samples` mechanism.
+    # This keeps few-shot examples unchanged while only scoring the specified datapoints.
+    if skip_non_anchor_points:
+        if anchor_points_path is None:
+            raise ValueError(
+                "--skip_non_anchor_points requires --anchor_points_path to be provided."
+            )
+        if getattr(args_for_eval, "samples", None):
+            raise ValueError(
+                "Cannot use both --skip_non_anchor_points and --samples at the same time."
+            )
+
+        anchor_points = load_pickle(anchor_points_path)
+
+        # Determine task name key for samples dict (first task listed)
+        if not args_for_eval.tasks:
+            raise ValueError(
+                "--skip_non_anchor_points requires --tasks to be specified."
+            )
+        task_name = args_for_eval.tasks.split(",")[0].strip()
+
+        samples_dict = {task_name: list(anchor_points)}
+
+        # lm_eval.__main__ expects `args.samples` to be either a path to a JSON file
+        # or a short JSON string. Very long JSON strings can trigger OS errors when
+        # passed to Path(...).is_file(), so we write the dict to a temp file under
+        # /tmp and point `samples` to that path, then delete it when finished.
+        tmp_dir = Path("/tmp")
+        tmp_dir.mkdir(parents=True, exist_ok=True)
+        samples_file = tmp_dir / f"anchor_samples_{os.getpid()}.json"
+        samples_file.write_text(json.dumps(samples_dict))
+
+        args_for_eval.samples = str(samples_file)
+
+    try:
+        # Run the evaluation
+        cli_evaluate(args_for_eval)
+    finally:
+        # Best-effort cleanup of temporary samples file
+        if samples_file is not None and samples_file.exists():
+            try:
+                samples_file.unlink()
+            except OSError:
+                pass
 
     # Post-process if anchor_points_path is provided
     if anchor_points_path is not None:

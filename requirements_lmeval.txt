@@ -1,0 +1,3 @@
+# mkdir -p envs && conda create --prefix ./envs/disco_env_lm_eval python==3.11.7
+stnd @ git+https://github.com/arubique/stnd.git@0d23b52f7742c08b28be560d2d52d450fcd274b7
+-e external/lm-evaluation-harness

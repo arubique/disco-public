@@ -5,6 +5,24 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Run LM Eval",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/run_lm_eval.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--batch_size=8",
+                "--device=cuda:0",
+                "--gen_kwargs=max_gen_toks=128,output_scores=True,return_dict_in_generate=True",
+                "--model=hf",
+                "--model_args=pretrained=abacusai/MetaMath-bagel-34b-v0.2-c1500,trust_remote_code=True",
+                "--num_fewshot=10",
+                "--output_path=/weka/oh/arubinstein17/github/lm-evaluation-harness/output/hellaswag_050126/llama13b_r71",
+                "--tasks=hellaswag_prompts",
+                "--log_samples"
+            ]
+        },
+        {
             "name": "Predict Model Performance",
             "type": "debugpy",
             "request": "launch",

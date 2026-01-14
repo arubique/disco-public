@@ -27,7 +27,7 @@ from pathlib import Path
 # Add repo root to path for imports
 repo_root = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(repo_root))
-from utils import load_pickle
+from utils import load_pickle, dump_pickle
 from scripts.lm_eval_postprocess import (
     convert_model_paths_to_target_outputs,
     find_jsonl_file_in_directory,
@@ -131,6 +131,12 @@ def main() -> None:
         help="Path to save target_outputs.pkl. If None, uses default based on scenario.",
     )
     parser.add_argument(
+        "--predictions_path",
+        type=str,
+        default=None,
+        help="Optional path to save anchor-point predictions tensor as a pickle file.",
+    )
+    parser.add_argument(
         "--skip_non_anchor_points",
         action="store_true",
         help=(
@@ -147,6 +153,7 @@ def main() -> None:
     metric = args.metric
     pad_to_size = args.pad_to_size
     target_outputs_path = args.target_outputs_path
+    predictions_path = args.predictions_path
     skip_non_anchor_points = args.skip_non_anchor_points
 
     # Create a copy of args without our custom attributes for cli_evaluate
@@ -163,6 +170,8 @@ def main() -> None:
         delattr(args_for_eval, "pad_to_size")
     if hasattr(args_for_eval, "target_outputs_path"):
         delattr(args_for_eval, "target_outputs_path")
+    if hasattr(args_for_eval, "predictions_path"):
+        delattr(args_for_eval, "predictions_path")
     if hasattr(args_for_eval, "skip_non_anchor_points"):
         delattr(args_for_eval, "skip_non_anchor_points")
 
@@ -269,6 +278,11 @@ def main() -> None:
 
         # Compute predictions tensor: predictions[:, anchor_points, :]
         predictions = target_outputs["predictions"][:, anchor_points, :]
+
+        # Optionally save predictions tensor if requested
+        if predictions_path is not None:
+            dump_pickle(predictions, predictions_path)
+            print(f"Saved predictions tensor to {predictions_path}")
         print(f"Computed predictions tensor shape: {predictions.shape}")
         print(
             f"  (n_models={predictions.shape[0]}, n_anchor_points={predictions.shape[1]}, n_choices={predictions.shape[2]})"

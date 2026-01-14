@@ -272,12 +272,14 @@ def main() -> None:
             pad_to_size=pad_to_size,
         )
 
-        # Load anchor points
-        anchor_points = load_pickle(anchor_points_path)
-        print(f"\nLoaded anchor points: {len(anchor_points)} indices")
+        predictions = target_outputs["predictions"]
+        if args.skip_non_anchor_points:
+            # Load anchor points
+            anchor_points = load_pickle(anchor_points_path)
+            print(f"\nLoaded anchor points: {len(anchor_points)} indices")
 
-        # Compute predictions tensor: predictions[:, anchor_points, :]
-        predictions = target_outputs["predictions"][:, anchor_points, :]
+            # Compute predictions tensor: predictions[:, anchor_points, :]
+            predictions = predictions[:, anchor_points, :]
 
         # Optionally save predictions tensor if requested
         if predictions_path is not None:

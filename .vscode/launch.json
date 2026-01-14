@@ -10,6 +10,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/scripts/run_lm_eval.py",
             "console": "integratedTerminal",
+            "python": "${workspaceFolder}/envs/disco_env_lm_eval/bin/python",
             "args": [
                 "--batch_size=8",
                 "--device=cuda:0",
@@ -19,7 +20,8 @@
                 "--num_fewshot=10",
                 "--output_path=/weka/oh/arubinstein17/github/lm-evaluation-harness/output/hellaswag_050126/llama13b_r71",
                 "--tasks=hellaswag_prompts",
-                "--log_samples"
+                "--anchor_points_path=/home/oh/arubinstein17/github/disco-public/data/model_outputs/hellaswag/anchor_points_disagreement.pkl",
+                "--log_samples",
             ]
         },
         {

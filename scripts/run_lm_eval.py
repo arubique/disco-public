@@ -273,7 +273,7 @@ def main() -> None:
         )
 
         predictions = target_outputs["predictions"]
-        if args.skip_non_anchor_points:
+        if not args.skip_non_anchor_points:
             # Load anchor points
             anchor_points = load_pickle(anchor_points_path)
             print(f"\nLoaded anchor points: {len(anchor_points)} indices")

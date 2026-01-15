@@ -25,6 +25,7 @@
                 "--skip_non_anchor_points",
                 "--predictions_path",
                 "/home/oh/arubinstein17/github/disco-public/data/model_outputs/hellaswag/local_predictions_r79.pkl"
+                // "/home/oh/arubinstein17/github/disco-public/data/model_outputs/hellaswag/local_predictions_r80.pkl"
             ]
         },
         {
@@ -35,8 +36,9 @@
             "console": "integratedTerminal",
             "args": [
                 "--prediction_path",
-                // "/home/oh/arubinstein17/github/disco-public/data/model_outputs/hellaswag/local_predictions.pkl",
-                "/home/oh/arubinstein17/github/disco-public/data/model_outputs/hellaswag/local_predictions_r79.pkl",
+                "/home/oh/arubinstein17/github/disco-public/data/model_outputs/hellaswag/local_predictions.pkl",
+                // "/home/oh/arubinstein17/github/disco-public/data/model_outputs/hellaswag/local_predictions_r79.pkl",
+                // "/home/oh/arubinstein17/github/disco-public/data/model_outputs/hellaswag/local_predictions_r80.pkl",
                 "--model_path",
                 "/home/oh/arubinstein17/github/disco-public/data/model_outputs/hellaswag/fitted_weights.pkl",
                 "--transform_path",

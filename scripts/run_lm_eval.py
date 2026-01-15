@@ -144,6 +144,14 @@ def main() -> None:
             "while keeping few-shot examples unchanged."
         ),
     )
+    parser.add_argument(
+        "--force_recompute",
+        action="store_true",
+        help=(
+            "If set, overwrite existing target_outputs even if the model already exists. "
+            "By default, existing models are skipped."
+        ),
+    )
 
     # Parse arguments (this will include our custom args)
     args = parse_eval_args(parser)
@@ -155,6 +163,7 @@ def main() -> None:
     target_outputs_path = args.target_outputs_path
     predictions_path = args.predictions_path
     skip_non_anchor_points = args.skip_non_anchor_points
+    force_recompute = args.force_recompute
 
     # Create a copy of args without our custom attributes for cli_evaluate
     # We'll create a new namespace with only the standard lm_eval arguments
@@ -174,6 +183,8 @@ def main() -> None:
         delattr(args_for_eval, "predictions_path")
     if hasattr(args_for_eval, "skip_non_anchor_points"):
         delattr(args_for_eval, "skip_non_anchor_points")
+    if hasattr(args_for_eval, "force_recompute"):
+        delattr(args_for_eval, "force_recompute")
 
     samples_file: Path | None = None
 
@@ -263,23 +274,32 @@ def main() -> None:
         # Create model_id_to_path_mapping
         model_id_to_path_mapping = {model_id: jsonl_path}
 
+        # Load anchor points - always needed for extracting/reordering results
+        anchor_points = load_pickle(anchor_points_path)
+        if skip_non_anchor_points:
+            print(
+                f"\nLoaded anchor points: {len(anchor_points)} indices (for reordering)"
+            )
+        else:
+            print(
+                f"\nLoaded anchor points: {len(anchor_points)} indices (for filtering/reordering)"
+            )
+
         # Convert to target_outputs
+        # When skip_non_anchor_points=False, anchor_points is used to filter and reorder results
+        # When skip_non_anchor_points=True, anchor_points is used to reorder results (already filtered by samples)
         target_outputs = convert_model_paths_to_target_outputs(
             model_id_to_path_mapping=model_id_to_path_mapping,
             scenario=scenario,
             metric=metric,
             output_path=target_outputs_path,
             pad_to_size=pad_to_size,
+            anchor_points=anchor_points,
+            force_recompute=force_recompute,
         )
 
+        # Predictions are already filtered to anchor points and reordered by convert_model_paths_to_target_outputs
         predictions = target_outputs["predictions"]
-        if not args.skip_non_anchor_points:
-            # Load anchor points
-            anchor_points = load_pickle(anchor_points_path)
-            print(f"\nLoaded anchor points: {len(anchor_points)} indices")
-
-            # Compute predictions tensor: predictions[:, anchor_points, :]
-            predictions = predictions[:, anchor_points, :]
 
         # Optionally save predictions tensor if requested
         if predictions_path is not None:

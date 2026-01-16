@@ -45,6 +45,8 @@ def find_jsonl_file_in_directory(directory_path):
         return None
 
     # Look for JSONL files matching the pattern
+    # Collect all matching files and return the most recent one
+    matching_files = []
     for root, dirs, files in os.walk(directory_path):
         for file in files:
             if (
@@ -52,13 +54,23 @@ def find_jsonl_file_in_directory(directory_path):
                 and "samples" in file
                 and "prompts" in file
             ):
-                return os.path.join(root, file)
+                file_path = os.path.join(root, file)
+                matching_files.append((file_path, os.path.getmtime(file_path)))
 
-    # If not found, try to find any JSONL file
+    if matching_files:
+        # Return the most recently modified file
+        return max(matching_files, key=lambda x: x[1])[0]
+
+    # If not found, try to find any JSONL file (also return most recent)
+    all_jsonl_files = []
     for root, dirs, files in os.walk(directory_path):
         for file in files:
             if file.endswith(".jsonl"):
-                return os.path.join(root, file)
+                file_path = os.path.join(root, file)
+                all_jsonl_files.append((file_path, os.path.getmtime(file_path)))
+
+    if all_jsonl_files:
+        return max(all_jsonl_files, key=lambda x: x[1])[0]
 
     return None
 

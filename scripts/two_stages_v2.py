@@ -43,7 +43,7 @@ sys.path.pop(0)
 SAMPLING_ITERATIONS = None
 DEFAULT_SCENARIO = "all"
 
-
+MMLU_2_GUIDING_MODELS = [268, 250]
 MMLU_100_GUIDING_MODELS = [
     13,
     309,
@@ -147,7 +147,6 @@ MMLU_100_GUIDING_MODELS = [
     254,
 ]
 
-# HELLASWAG_10_GUIDING_MODELS = [142, 324, 97, 194, 109, 287, 281, 330, 152, 80]
 HELLASWAG_10_GUIDING_MODELS = [235, 246, 117, 70, 287, 323, 149, 329, 150, 189]
 
 
@@ -654,6 +653,19 @@ def main():
         default=None,
         help="Path to save transform_v2",
     )
+    parser.add_argument(
+        "--anchor_preset",
+        type=str,
+        default=None,
+        help="Anchor preset",
+        choices=[
+            "mmlu_rank",
+            "mmlu_mae",
+            "hellaswag_rank",
+            "hellaswag_mae",
+            None,
+        ],
+    )
     args = parser.parse_args()
 
     # cache_dir = os.path.join(ROOT_PATH, "cache")
@@ -710,8 +722,21 @@ def main():
     # guiding_models = HELLASWAG_10_GUIDING_MODELS
     # sampling_names = ["high-disagreement@10+nonstratified"]
 
-    guiding_models = None
-    sampling_names = ["high-disagreement+nonstratified"]
+    if args.anchor_preset is None:
+        guiding_models = None
+        sampling_names = ["high-disagreement"]
+    elif args.anchor_preset == "mmlu_rank":
+        guiding_models = MMLU_100_GUIDING_MODELS
+        sampling_names = ["high-disagreement@100+nonstratified"]
+    elif args.anchor_preset == "mmlu_mae":
+        guiding_models = MMLU_2_GUIDING_MODELS
+        sampling_names = ["high-disagreement@2"]
+    elif args.anchor_preset == "hellaswag_rank":
+        guiding_models = HELLASWAG_10_GUIDING_MODELS
+        sampling_names = ["high-disagreement@10+nonstratified"]
+    elif args.anchor_preset == "hellaswag_mae":
+        guiding_models = None
+        sampling_names = ["high-disagreement+nonstratified"]
 
     # guiding_models = MMLU_100_GUIDING_MODELS
     # sampling_names = ["high-disagreement@100+nonstratified"]
@@ -1154,7 +1179,9 @@ def main():
     ):
         if target_model_name in predicted_accs_new:
             accuracy = predicted_accs_new[target_model_name][0]
-            print(f"Model {model_idx}: {accuracy:.6f}")
+            print(
+                f"Model {model_idx}: {accuracy:.6f} (predicted) | {gt_scores_new[target_model_name]} (ground truth)"
+            )
 
     gt_scores_new_np = np.stack(
         [

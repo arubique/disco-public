@@ -36,13 +36,17 @@
             "console": "integratedTerminal",
             "args": [
                 "--prediction_path",
-                "/home/oh/arubinstein17/github/disco-public/data/model_outputs/hellaswag/local_predictions.pkl",
+                // "/home/oh/arubinstein17/github/disco-public/data/model_outputs/hellaswag/local_predictions.pkl",
                 // "/home/oh/arubinstein17/github/disco-public/data/model_outputs/hellaswag/local_predictions_r79.pkl",
                 // "/home/oh/arubinstein17/github/disco-public/data/model_outputs/hellaswag/local_predictions_r80.pkl",
+                // "/home/oh/arubinstein17/github/disco-public/data/model_outputs/mmlu/local_predictions_r86.pkl",
+                "/home/oh/arubinstein17/github/disco-public/data/model_outputs/mmlu/local_predictions_r87.pkl",
                 "--model_path",
-                "/home/oh/arubinstein17/github/disco-public/data/model_outputs/hellaswag/fitted_weights.pkl",
+                // "/home/oh/arubinstein17/github/disco-public/data/model_outputs/hellaswag/fitted_weights.pkl",
+                "/home/oh/arubinstein17/github/disco-public/data/model_outputs/mmlu/fitted_weights.pkl",
                 "--transform_path",
-                "/home/oh/arubinstein17/github/disco-public/data/model_outputs/hellaswag/transform.pkl",
+                // "/home/oh/arubinstein17/github/disco-public/data/model_outputs/hellaswag/transform.pkl",
+                "/home/oh/arubinstein17/github/disco-public/data/model_outputs/mmlu/transform.pkl",
                 "--pca",
                 "256"
             ]
@@ -61,6 +65,10 @@
             "program": "/home/oh/arubinstein17/github/disco-public/scripts/two_stages_v2.py",
             "console": "integratedTerminal",
             "args": [
+                "--anchor_preset",
+                "mmlu_rank",
+                // "mmlu_mae",
+                // "hellaswag_mae",
                 "--source_model_outputs_path",
                 "/home/oh/arubinstein17/github/disco-public/data/model_outputs/mmlu/source_outputs.pkl",
                 // "/home/oh/arubinstein17/github/disco-public/data/model_outputs/hellaswag/source_outputs.pkl",
@@ -71,7 +79,7 @@
                 // "/home/oh/arubinstein17/github/disco-public/data/model_outputs/hellaswag/fitted_weights.pkl",
                 "/home/oh/arubinstein17/github/disco-public/data/model_outputs/mmlu/fitted_weights.pkl",
                 "--transform_save_path",
-                // "/home/oh/arubinstein17/github/disco-public/data/model_outputs/hellaswag/transform.pkl",
+                // // "/home/oh/arubinstein17/github/disco-public/data/model_outputs/hellaswag/transform.pkl",
                 "/home/oh/arubinstein17/github/disco-public/data/model_outputs/mmlu/transform.pkl",
                 "--target_model_outputs_path",
                 "/home/oh/arubinstein17/github/disco-public/data/model_outputs/mmlu/target_outputs.pkl"

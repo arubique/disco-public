@@ -200,6 +200,7 @@ def convert_model_paths_to_target_outputs(
     Returns:
     - target_outputs: Dictionary with the expected structure
     """
+    assert output_path is not None, "output_path must be provided"
     if output_path is None:
         # Extract scenario base name for default path
         if scenario.startswith("harness_"):

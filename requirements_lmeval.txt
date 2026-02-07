@@ -4,3 +4,4 @@ stnd @ git+https://github.com/arubique/stnd.git@0d23b52f7742c08b28be560d2d52d450
 
 matplotlib
 h5py
+tiktoken

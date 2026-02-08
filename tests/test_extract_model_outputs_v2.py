@@ -35,9 +35,11 @@ PERF_TOLERANCE = 1e-4
 def _source_model_to_csv_id(model_name):
     """Map source_outputs model key to CSV Model column value (creator/model)."""
     # e.g. open-llm-leaderboard/0-hero__Matter-0.2-7B-DPO-details -> 0-hero/Matter-0.2-7B-DPO
-    if not model_name.startswith("open-llm-leaderboard/details_"):
+    if not model_name.startswith(
+        "open-llm-leaderboard/"
+    ) or not model_name.endswith("-details"):
         return None
-    mid = model_name[len("open-llm-leaderboard/details_") :]
+    mid = model_name[len("open-llm-leaderboard/") : -len("-details")]
     return mid.replace("__", "/", 1)
 
 
@@ -88,6 +90,7 @@ def load_csv_scores(csv_path):
             sanitize_for_hf_repo(model_str)
             .split("huggingface.co_")[1]
             .split("__style")[0]
+            .split("__sty")[0]
             .replace("_", "/")
         )
         if "/" in model_str:

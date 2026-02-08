@@ -208,6 +208,21 @@
                 "/home/oh/arubinstein17/github/disco-public/data/leaderboard_mmlu_pro_raw.pickle"
             ],
             "console": "integratedTerminal"
-        }
+        },
+        {
+            "name": "Test Extract Model Outputs V2",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "tests/test_extract_model_outputs_v2.py",
+            "args": [
+                "--outputs_path",
+                "data/model_outputs/mmlu_pro/all_outputs_debug.pkl",
+                "--raw_path",
+                "data/leaderboard_mmlu_pro_raw.pickle",
+                "--csv_path",
+                "benchmark_csvs/open-llm-leaderboard-v2.csv"
+            ],
+            "console": "integratedTerminal"
+        },
     ]
 }

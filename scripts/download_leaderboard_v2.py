@@ -22,7 +22,7 @@ CACHE_DIR = "./cache_dir"
 
 
 # MMLU-Pro: open-llm-leaderboard v2 detail datasets use config
-# "{creator}__{model}__leaderboard_mmlu_pro" (metric: acc)
+# "{creator}__{model}__leaderboard_mmlu_pro" (metric: acc_norm or acc)
 MMLU_PRO_SCENARIO_SUFFIX = "__leaderboard_mmlu_pro"
 
 DEFAULT_CSV_PATH = "benchmark_csvs/open-llm-leaderboard-v2.csv"
@@ -157,8 +157,9 @@ def main():
             models.append(repo)
 
     data = {}
-    # MMLU-Pro uses metric "acc" and config name "{details_id}__leaderboard_mmlu_pro"
-    metric = "acc"
+    # Prefer acc_norm so correctness matches leaderboard MMLU-PRO Raw; fall back to acc
+    PREFERRED_METRIC = "acc_norm"
+    FALLBACK_METRIC = "acc"
 
     os.makedirs(CACHE_DIR, exist_ok=True)
     skipped = 0
@@ -181,7 +182,12 @@ def main():
             for extra_key in EXTRA_KEYS:
                 if extra_key in available:
                     data[model][s][extra_key] = latest[extra_key]
-            # Correctness: v2 leaderboard has per-row "acc" column; older format has "metrics"
+            # Correctness: prefer acc_norm (matches leaderboard MMLU-PRO Raw), else acc
+            metric = (
+                PREFERRED_METRIC
+                if PREFERRED_METRIC in available
+                else FALLBACK_METRIC
+            )
             try:
                 if "metrics" in available:
                     data[model][s]["correctness"] = [

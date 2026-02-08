@@ -145,6 +145,21 @@
             "console": "integratedTerminal",
         },
         {
+            "name": "Extract Model Outputs V2 (pad to 31)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "scripts/extract_model_outputs_from_raw_data_v2.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--input_path",
+                "/home/oh/arubinstein17/github/disco-public/data/leaderboard_mmlu_pro_raw.pickle",
+                "--output_path",
+                "/home/oh/arubinstein17/github/disco-public/data/model_outputs/mmlu_pro/all_outputs_debug.pkl",
+                "--pad_to_size",
+                "31"
+            ]
+        },
+        {
             "name": "Plot Tables",
             "type": "debugpy",
             "request": "launch",

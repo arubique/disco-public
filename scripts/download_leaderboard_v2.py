@@ -65,6 +65,20 @@ def extract_model_id(value):
     return None
 
 
+def sanitize_for_hf_repo(s, max_length=96):
+    """Make a string valid for Hugging Face repo id: alphanumeric, '-', '_', '.' only.
+    Disallowed: spaces, parentheses, '--', '..'; '-' and '.' cannot start or end.
+    """
+    if not s:
+        return "_"
+    s = re.sub(r"[^a-zA-Z0-9_.-]", "_", str(s))
+    s = re.sub(r"-+", "-", s)  # collapse multiple dashes (forbids '--')
+    s = re.sub(r"\.\.+", ".", s)  # collapse multiple dots (forbids '..')
+    s = s.strip(".-")  # cannot start or end with . or -
+    s = s or "_"
+    return s[:max_length] if len(s) > max_length else s
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Download MMLU-Pro model outputs from open-llm-leaderboard (v2)."
@@ -113,12 +127,29 @@ def main():
         ]
     print(f"Loaded {len(model_names)} models from {args.csv_path}")
 
+    # v2 leaderboard: repo is open-llm-leaderboard/{creator}__{model}-details (not details_...)
+    hf_org = "open-llm-leaderboard"
+    details_suffix = "-details"
+    max_repo_name_len = 96 - len(hf_org) - 1 - len(details_suffix)  # 1 for /
+
     models = []
+    seen = set()
     for m in model_names:
-        creator, model = tuple(m.split("/"))
-        models.append(
-            "open-llm-leaderboard/details_{:}__{:}".format(creator, model)
+        parts = m.split("/", 1)
+        if len(parts) != 2:
+            continue
+        creator, model = parts
+        details_id = (
+            sanitize_for_hf_repo(creator, max_length=48)
+            + "__"
+            + sanitize_for_hf_repo(model, max_length=48)
         )
+        if len(details_id) > max_repo_name_len:
+            details_id = details_id[:max_repo_name_len].rstrip("_-.")
+        repo = f"{hf_org}/{details_id}{details_suffix}"
+        if repo not in seen:
+            seen.add(repo)
+            models.append(repo)
 
     data = {}
     # MMLU-Pro uses metric "acc" and config name "{details_id}__leaderboard_mmlu_pro"
@@ -128,8 +159,8 @@ def main():
     skipped = 0
     log = []
     for model in tqdm(models):
-        # Config name for this model's MMLU-Pro run (open-llm-leaderboard v2)
-        details_id = model.replace("open-llm-leaderboard/details_", "")
+        # Config name: {details_id}__leaderboard_mmlu_pro (repo is .../details_id-details)
+        details_id = model.replace(f"{hf_org}/", "").replace(details_suffix, "")
         s = details_id + MMLU_PRO_SCENARIO_SUFFIX
 
         try:

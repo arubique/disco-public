@@ -3,9 +3,9 @@ Test generated source_outputs (from extract_model_outputs_from_raw_data_v2.py):
 
 1. Subsample 5 random models.
 2. For each: performance (sum of correctness / n_questions) should match MMLU-PRO Raw in the leaderboard CSV.
-3. For each: correctness[model,q] should equal (gold[q] == predicted_label[q]), where predicted_label is the
-   choice index stored in the first slot of predictions (gold label == argmax of predictions in the
-   sense that the stored value is the chosen option index).
+3. Optional (--check_correctness_consistency): correctness[model,q] == (gold[q] == pred_label[q]).
+   Off by default because stored correctness is acc_norm (from leaderboard logprobs), which may not
+   match (gold == parsed_resps) from our resps→pred conversion.
 
 Usage:
   python tests/test_extract_model_outputs_v2.py --outputs_path data/model_outputs/mmlu/source_outputs.pkl --raw_path data/leaderboard_mmlu_pro_raw.pickle --csv_path benchmark_csvs/open-llm-leaderboard-v2.csv
@@ -129,7 +129,17 @@ def load_gold_from_raw(raw_path, n_questions):
     return _target_to_indices(target, n_questions)
 
 
-def run_tests(outputs_path, raw_path, csv_path, seed=42, n_sample=5):
+def run_tests(
+    outputs_path,
+    raw_path,
+    csv_path,
+    seed=42,
+    n_sample=5,
+    skip_correctness_consistency=True,
+):
+    """Run tests. skip_correctness_consistency=True by default because stored
+    correctness comes from leaderboard acc_norm (from logprobs), which may not
+    match (gold == parsed_resps) from our resps→pred conversion."""
     source = load_pickle(outputs_path)
     csv_scores = load_csv_scores(csv_path)
 
@@ -140,7 +150,11 @@ def run_tests(outputs_path, raw_path, csv_path, seed=42, n_sample=5):
     n_models, n_questions, pad_size = predictions.shape
     assert correctness.shape == (n_models, n_questions, 1)
 
-    gold = load_gold_from_raw(raw_path, n_questions)
+    gold = (
+        load_gold_from_raw(raw_path, n_questions)
+        if not skip_correctness_consistency
+        else None
+    )
 
     # Subsample models that exist in CSV
     model_names = list(models_map.keys())
@@ -168,25 +182,26 @@ def run_tests(outputs_path, raw_path, csv_path, seed=42, n_sample=5):
                 f"Model {model_name}: computed performance {perf:.6f} != CSV MMLU-PRO Raw {expected_perf:.6f}"
             )
 
-        # 2) Correctness == (gold == predicted label); predicted label = value in first slot (choice index)
-        pred_val = predictions[idx, :, 0]  # (n_questions,) choice index or -inf
-        valid_pred = pred_val > -np.inf
-        valid_gold = gold >= 0
-        expected_correct = np.zeros(n_questions, dtype=np.float64)
-        match = (
-            valid_gold
-            & valid_pred
-            & (np.round(pred_val).astype(np.int64) == gold)
-        )
-        expected_correct[match] = 1.0
-        # Where pred is invalid we expect 0; where gold is invalid we leave expected as 0
-        if not np.allclose(correctness[idx, :, 0], expected_correct):
-            bad = np.where(
-                np.abs(correctness[idx, :, 0] - expected_correct) > 1e-6
-            )[0]
-            errors.append(
-                f"Model {model_name}: correctness disagrees with (gold == pred_label) at {len(bad)} indices (e.g. {bad[:5].tolist()})"
+        # 2) Optional: correctness == (gold == predicted label) where we have valid parsed pred.
+        #    Skip when using acc_norm (leaderboard may compute from logprobs, not resps).
+        if not skip_correctness_consistency:
+            pred_val = np.asarray(predictions[idx, :, 0], dtype=np.float64)
+            valid_pred = np.isfinite(pred_val) & (pred_val > -np.inf)
+            valid_gold = gold >= 0
+            expected_correct = np.zeros(n_questions, dtype=np.float64)
+            pred_int = np.full(n_questions, -1, dtype=np.int64)
+            pred_int[valid_pred] = np.round(pred_val[valid_pred]).astype(
+                np.int64
             )
+            match = valid_gold & valid_pred & (pred_int == gold)
+            expected_correct[match] = 1.0
+            if not np.allclose(correctness[idx, :, 0], expected_correct):
+                bad = np.where(
+                    np.abs(correctness[idx, :, 0] - expected_correct) > 1e-6
+                )[0]
+                errors.append(
+                    f"Model {model_name}: correctness disagrees with (gold == pred_label) at {len(bad)} indices (e.g. {bad[:5].tolist()})"
+                )
 
     if errors:
         for e in errors:
@@ -231,6 +246,11 @@ def main():
     parser.add_argument(
         "--n_sample", type=int, default=5, help="Number of models to subsample"
     )
+    parser.add_argument(
+        "--check_correctness_consistency",
+        action="store_true",
+        help="Also check correctness == (gold == pred_label). Default off because acc_norm is from logprobs, not resps.",
+    )
     args = parser.parse_args()
 
     run_tests(
@@ -239,6 +259,7 @@ def main():
         csv_path=args.csv_path,
         seed=args.seed,
         n_sample=args.n_sample,
+        skip_correctness_consistency=not args.check_correctness_consistency,
     )
 
 

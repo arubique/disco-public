@@ -220,7 +220,8 @@
                 "--raw_path",
                 "data/leaderboard_mmlu_pro_raw.pickle",
                 "--csv_path",
-                "benchmark_csvs/open-llm-leaderboard-v2.csv"
+                "benchmark_csvs/open-llm-leaderboard-v2.csv",
+                "--check_correctness_consistency"
             ],
             "console": "integratedTerminal"
         },

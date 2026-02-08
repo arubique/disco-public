@@ -34,13 +34,18 @@
             "request": "launch",
             "program": "${workspaceFolder}/scripts/predict_model_performance.py",
             "console": "integratedTerminal",
+            "python": "/weka/oh/arubinstein17/github/disco-public/envs/identical_env/bin/python",
             "args": [
                 "--prediction_path",
                 // "/home/oh/arubinstein17/github/disco-public/data/model_outputs/hellaswag/local_predictions.pkl",
                 // "/home/oh/arubinstein17/github/disco-public/data/model_outputs/hellaswag/local_predictions_r79.pkl",
                 // "/home/oh/arubinstein17/github/disco-public/data/model_outputs/hellaswag/local_predictions_r80.pkl",
                 // "/home/oh/arubinstein17/github/disco-public/data/model_outputs/mmlu/local_predictions_r86.pkl",
-                "/home/oh/arubinstein17/github/disco-public/data/model_outputs/mmlu/local_predictions_r87.pkl",
+                // "/home/oh/arubinstein17/github/disco-public/data/model_outputs/mmlu/local_predictions_r87.pkl",
+                "/home/oh/arubinstein17/github/disco-public/data/model_outputs/mmlu/local_predictions_r90.pkl", // zephyr full prompt mmlu
+                // "/home/oh/arubinstein17/github/disco-public/data/model_outputs/mmlu/local_predictions_r91.pkl", // orthogonal-2x7B-base full prompt mmlu
+                // "/home/oh/arubinstein17/github/disco-public/data/model_outputs/mmlu/local_predictions_r92.pkl", // Everyone-Coder-4x7b-Base full prompt mmlu
+                // "/home/oh/arubinstein17/github/disco-public/data/model_outputs/mmlu/local_predictions_r93.pkl", // Marcoroni-7b-DPO-Merge full prompt mmlu
                 "--model_path",
                 // "/home/oh/arubinstein17/github/disco-public/data/model_outputs/hellaswag/fitted_weights.pkl",
                 "/home/oh/arubinstein17/github/disco-public/data/model_outputs/mmlu/fitted_weights.pkl",

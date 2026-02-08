@@ -28,10 +28,15 @@ MMLU_PRO_SCENARIO_SUFFIX = "__leaderboard_mmlu_pro"
 DEFAULT_CSV_PATH = "benchmark_csvs/open-llm-leaderboard-v2.csv"
 LB_SAVEPATH = "data/leaderboard_fields_raw_22042025.pickle"
 
+# Keys to copy from dataset; only those present are saved (v1: example, predictions; v2: doc, resps, target, etc.)
 EXTRA_KEYS = [
-    # 'full_prompt',
     "example",
     "predictions",
+    "doc",
+    "resps",
+    "filtered_resps",
+    "target",
+    "arguments",
 ]
 
 # Pattern: href="https://huggingface.co/creator/model_name" (exclude datasets/ links)
@@ -169,19 +174,31 @@ def main():
             if s not in data[model]:
                 data[model][s] = {}
             aux = load_dataset(model, s, cache_dir=CACHE_DIR)
+            latest = aux["latest"]
             data[model][s]["dates"] = list(aux.keys())
+            # Only copy extra keys that exist (v2 uses e.g. doc, resps instead of example, predictions)
+            available = set(latest.column_names)
             for extra_key in EXTRA_KEYS:
-                data[model][s][extra_key] = aux["latest"][extra_key]
+                if extra_key in available:
+                    data[model][s][extra_key] = latest[extra_key]
+            # Correctness: v2 leaderboard has per-row "acc" column; older format has "metrics"
             try:
-                data[model][s]["correctness"] = [
-                    a[metric] for a in aux["latest"]["metrics"]
-                ]
+                if "metrics" in available:
+                    data[model][s]["correctness"] = [
+                        a[metric] for a in latest["metrics"]
+                    ]
+                elif metric in available:
+                    data[model][s]["correctness"] = list(latest[metric])
+                else:
+                    raise KeyError(
+                        f"Neither 'metrics' nor '{metric}' in {available}"
+                    )
                 print("\nOK {:} {:}\n".format(model, s))
                 log.append("\nOK {:} {:}\n".format(model, s))
             except Exception as e:
                 print(f"Error accessing dataset attribute: {e}")
                 try:
-                    data[model][s]["correctness"] = aux["latest"][metric]
+                    data[model][s]["correctness"] = latest[metric]
                     print("\nOK {:} {:}\n".format(model, s))
                     log.append("\nOK {:} {:}\n".format(model, s))
                 except Exception as e2:

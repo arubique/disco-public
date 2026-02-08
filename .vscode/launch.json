@@ -188,7 +188,7 @@
                 "--csv_path",
                 "benchmark_csvs/open-llm-leaderboard-v2.csv",
                 "--subsample_step",
-                "100",
+                "1000",
                 "--lb_savepath",
                 "/home/oh/arubinstein17/github/disco-public/data/leaderboard_mmlu_pro_raw.pickle"
             ],

@@ -22,6 +22,7 @@ Note: All commands are supposed to be run from the root of this repository and a
 ## Table of Contents
 
 - [Overview](#overview)
+- [Evaluating your model 100x faster](#evaluating-your-model-100x-faster)
 - [Installation](#installation)
 - [Reproduce results from the paper](#reproduce-results-from-the-paper)
 - [Download model outputs](#download-model-outputs)
@@ -29,6 +30,11 @@ Note: All commands are supposed to be run from the root of this repository and a
 - [Train DISCO](#train-disco)
 - [Notes on `stnd.run_from_csv.py` and `.csv` files](#note-about-stndrun_from_csvpy-and-csv-files)
 - [Citation](#citation)
+
+
+## Evaluating your model 100x faster
+
+You can use our DISCO-extension to the [MASEval](https://maseval.readthedocs.io/en/stable/) library to evaluate your model on MMLU. Example command can be found [here](https://github.com/arubique/MASEval/tree/main/examples/mmlu_benchmark).
 
 
 ## Installation

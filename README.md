@@ -22,7 +22,7 @@ Note: All commands are supposed to be run from the root of this repository and a
 ## Table of Contents
 
 - [Overview](#overview)
-- [Evaluating your model 100x faster](#evaluating-your-model-100x-faster)
+- [Evaluate your model 100x faster](#evaluate-your-model-100x-faster)
 - [Installation](#installation)
 - [Reproduce results from the paper](#reproduce-results-from-the-paper)
 - [Download model outputs](#download-model-outputs)

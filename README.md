@@ -34,7 +34,7 @@ Note: All commands are supposed to be run from the root of this repository and a
 
 ## Evaluate your model 100x faster
 
-You can use our DISCO-extension to the [MASEval](https://maseval.readthedocs.io/en/stable/) library to evaluate your model on MMLU. Example command can be found [here](https://github.com/arubique/MASEval/tree/main/examples/mmlu_benchmark).
+You can use our DISCO-extension to the [MASEval](https://maseval.readthedocs.io/en/stable/) library to evaluate your model on MMLU. Example command can be found [here](https://github.com/parameterlab/MASEval/tree/main/examples/mmlu_benchmark).
 
 
 ## Installation

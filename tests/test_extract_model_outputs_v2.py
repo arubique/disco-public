@@ -27,7 +27,8 @@ from scripts.download_leaderboard_v2 import sanitize_for_hf_repo
 sys.path.pop(0)
 
 MMLU_PRO_SCENARIO_SUFFIX = "__leaderboard_mmlu_pro"
-CHOICE_TO_INDEX = {"A": 0, "B": 1, "C": 2, "D": 3, "E": 4}
+# Same as extract script: option index 0 == A, 1 == B, ... (MMLU-Pro uses up to J).
+CHOICE_TO_INDEX = {chr(ord("A") + i): i for i in range(26)}
 # Tolerance for mean correctness vs CSV score (floating point + possible rounding in CSV)
 PERF_TOLERANCE = 1e-4
 

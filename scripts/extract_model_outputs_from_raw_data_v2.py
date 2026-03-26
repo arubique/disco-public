@@ -2,6 +2,9 @@
 Extract model outputs from v2 leaderboard raw pickle (e.g. leaderboard_mmlu_pro_raw.pickle)
 into the same format as source_outputs.pkl used by two_stages_v2 and downstream code.
 
+Predictions are the argmax choice index per question (0=A, 1=B, ...) from per-choice
+logprobs in ``filtered_resps`` (preferred) or ``resps``, matching Hub option order.
+
 Output dict has:
   - predictions: (n_models, n_questions, n_answers) float array
   - correctness: (n_models, n_questions, 1) float array
@@ -24,28 +27,100 @@ sys.path.pop(0)
 
 MMLU_PRO_SCENARIO_SUFFIX = "__leaderboard_mmlu_pro"
 
-# Map choice letter to index for predictions
-CHOICE_TO_INDEX = {"A": 0, "B": 1, "C": 2, "D": 3, "E": 4}
+# Gold / choice order: option index 0 == "A", 1 == "B", ... (MMLU-Pro uses up to J).
+CHOICE_TO_INDEX = {chr(ord("A") + i): i for i in range(26)}
+
+
+def _parse_logprob_from_choice_cell(cell):
+    """Parse one choice cell from Hub resps/filtered_resps into a float logprob."""
+    v = cell
+    while isinstance(v, (list, tuple)) and len(v) == 1:
+        v = v[0]
+    if isinstance(v, (list, tuple)) and len(v) >= 1:
+        x = v[0]
+        try:
+            return float(x)
+        except (TypeError, ValueError):
+            return np.nan
+    if isinstance(v, (int, float, np.floating)):
+        return float(v)
+    if isinstance(v, str):
+        try:
+            return float(v)
+        except ValueError:
+            return np.nan
+    return np.nan
+
+
+def _legacy_resps_row_to_choice_index(resps_row):
+    """Fallback when row is not a list of per-choice logprobs (older / text-answer format)."""
+    if resps_row is None:
+        return -np.inf
+    if isinstance(resps_row, str):
+        s = resps_row.strip().upper()
+        if s:
+            return float(CHOICE_TO_INDEX.get(s[0], -1))
+        return -np.inf
+    if isinstance(resps_row, (int, float, np.floating)):
+        return float(resps_row)
+    if isinstance(resps_row, (list, tuple)) and len(resps_row):
+        r = resps_row[0]
+        while isinstance(r, (list, tuple)) and len(r) == 1:
+            r = r[0]
+        if isinstance(r, str):
+            s = r.strip().upper()
+            if s:
+                return float(CHOICE_TO_INDEX.get(s[0], -1))
+        if isinstance(r, (int, float, np.floating)):
+            return float(r)
+    return -np.inf
+
+
+def _resps_row_to_argmax_choice_index(resps_row):
+    """
+    One row = one question: either a list of K choice cells (logprob + greedy flag),
+    or a legacy text/single-value answer.
+    Returns float index in [0, K-1] or -inf if unknown.
+    """
+    if resps_row is None:
+        return -np.inf
+    if not isinstance(resps_row, (list, tuple)):
+        return _legacy_resps_row_to_choice_index(resps_row)
+    if len(resps_row) == 0:
+        return -np.inf
+
+    logprobs = [_parse_logprob_from_choice_cell(c) for c in resps_row]
+    finite_mask = np.isfinite(logprobs) & ~np.isnan(logprobs)
+    if not np.any(finite_mask):
+        return _legacy_resps_row_to_choice_index(resps_row)
+
+    logprobs_arr = np.array(logprobs, dtype=np.float64)
+    logprobs_arr[~finite_mask] = -np.inf
+    j = int(np.nanargmax(logprobs_arr))
+    return float(j)
+
+
+def _pick_resps_record(rec):
+    """Prefer filtered_resps (flat [logprob, greedy] per choice); else resps."""
+    fr = rec.get("filtered_resps")
+    if fr is not None and hasattr(fr, "__len__") and len(fr) > 0:
+        return fr
+    return rec.get("resps")
 
 
 def _resps_to_prediction_indices(resps, n_questions, max_answers=1):
-    """Convert resps (list of str or numbers) to (n_questions, max_answers) float array."""
+    """
+    Per-question predicted choice index (same order as dataset options: A=0, B=1, ...).
+
+    Leaderboard v2 MMLU-Pro rows store resps as K choice-wise logprobs; use argmax.
+    Falls back to legacy letter / scalar parsing when logprobs are absent.
+    """
     out = np.full((n_questions, max_answers), -np.inf, dtype=np.float64)
     if resps is None or len(resps) == 0:
         return out
     n = min(n_questions, len(resps))
     for i in range(n):
-        r = resps[i]
-        if isinstance(r, (list, tuple)):
-            r = r[0] if len(r) else None
-        if r is None:
-            continue
-        if isinstance(r, str):
-            r = r.strip().upper()
-            if len(r) >= 1:
-                out[i, 0] = float(CHOICE_TO_INDEX.get(r[0], -1))
-        elif isinstance(r, (int, float)):
-            out[i, 0] = float(r)
+        out[i, 0] = _resps_row_to_argmax_choice_index(resps[i])
     return out
 
 
@@ -121,7 +196,7 @@ def extract_source_outputs_from_v2_raw(raw_path, pad_to_size=31):
             corr[:n_questions], dtype=np.float64
         )
 
-        resps = rec.get("resps") or rec.get("filtered_resps")
+        resps = _pick_resps_record(rec)
         pred = _resps_to_prediction_indices(resps, n_questions, max_answers=1)
         predictions_arr[i, :, :1] = pred[:, :1]
 

@@ -35,12 +35,7 @@ Note: All commands are supposed to be run from the root of this repository and a
 
 You can use our DISCO-extension to the [MASEval](https://maseval.readthedocs.io/en/stable/) library to evaluate your model on MMLU. Example command can be found [here](https://github.com/parameterlab/MASEval/tree/main/examples/mmlu_benchmark).
 
-Note: This workflow uses the [`arubique/DISCO-MMLU`](https://huggingface.co/arubique/DISCO-MMLU) model and the [`arubique/flattened-MMLU`](https://huggingface.co/datasets/arubique/flattened-MMLU) dataset from the Hugging Face Hub. The dataset is not the MMLU release as originally published: all questions are concatenated in a fixed order in one flat table, without separate splits per subject (subscenario).
-
-## Evaluate your model 100x faster
-
-You can use our DISCO-extension to the [MASEval](https://maseval.readthedocs.io/en/stable/) library to evaluate your model on MMLU. Example command can be found [here](https://github.com/parameterlab/MASEval/tree/main/examples/mmlu_benchmark).
-
+Note: This workflow uses the [`arubique/DISCO-MMLU`](https://huggingface.co/arubique/DISCO-MMLU) model for efficient evaluation of LLMs on the [`arubique/flattened-MMLU`](https://huggingface.co/datasets/arubique/flattened-MMLU) dataset from the Hugging Face Hub. The flattened-MMLU dataset is derived from the original [MMLU](https://huggingface.co/datasets/cais/mmlu) release the following way: all questions are concatenated in a fixed order in one flat table, without separate splits per subject (subscenario).
 
 ## Installation
 

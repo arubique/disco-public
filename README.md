@@ -31,11 +31,11 @@ Note: All commands are supposed to be run from the root of this repository and a
 - [Notes on `stnd.run_from_csv.py` and `.csv` files](#note-about-stndrun_from_csvpy-and-csv-files)
 - [Citation](#citation)
 
-
 ## Evaluate your model 100x faster
 
 You can use our DISCO-extension to the [MASEval](https://maseval.readthedocs.io/en/stable/) library to evaluate your model on MMLU. Example command can be found [here](https://github.com/parameterlab/MASEval/tree/main/examples/mmlu_benchmark).
 
+Note: This workflow uses the [`arubique/DISCO-MMLU`](https://huggingface.co/arubique/DISCO-MMLU) model for efficient evaluation of LLMs on the [`arubique/flattened-MMLU`](https://huggingface.co/datasets/arubique/flattened-MMLU) dataset from the Hugging Face Hub. The flattened-MMLU dataset is derived from the original [MMLU](https://huggingface.co/datasets/cais/mmlu) release the following way: all questions are concatenated in a fixed order in one flat table, without separate splits per subject (subscenario).
 
 ## Installation
 
@@ -69,13 +69,15 @@ Note: Currently we do not provide code for computing [Metabench](https://arxiv.o
 ## Download model outputs
 
 To train DISCO you will need model outputs on MMLU, Hellaswag, Winogrande and Arc datasets.
-To download the outputs (~3GB) please run the following command:
+To download the outputs (~300MB), run:
 
 ```
 python scripts/download_model_outputs.py
 ```
 
-This script will download the file `data/model_outputs.pickle`.
+This fetches the public Hub dataset [`arubique/disco-model-outputs`](https://huggingface.co/datasets/arubique/disco-model-outputs) and writes `data/model_outputs.pickle`.
+
+For more detail see [`docs/datasets.md`](docs/datasets.md).
 
 ### (Optional) Extract model outputs from open-llm-leaderboard data
 

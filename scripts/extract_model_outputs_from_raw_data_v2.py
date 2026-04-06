@@ -2,8 +2,12 @@
 Extract model outputs from v2 leaderboard raw pickle (e.g. leaderboard_mmlu_pro_raw.pickle)
 into the same format as source_outputs.pkl used by two_stages_v2 and downstream code.
 
-Predictions are the argmax choice index per question (0=A, 1=B, ...) from per-choice
-logprobs in ``filtered_resps`` (preferred) or ``resps``, matching Hub option order.
+Predictions match lm-eval ``acc_norm`` for multiple_choice (ConfigurableTask.process_results):
+``pred_norm = argmax(lls / completion_len)`` where ``lls`` are per-choice loglikelihoods from
+``filtered_resps``/``resps`` and ``completion_len[i] = len(choice_i)`` for choices from
+``doc_to_choice(doc)`` (same as ``leaderboard_mmlu_pro``: one letter per option, A..).
+
+If ``doc`` is missing for a row, falls back to plain ``argmax(lls)``.
 
 Output dict has:
   - predictions: (n_models, n_questions, n_answers) float array
@@ -15,6 +19,8 @@ Output dict has:
 
 import argparse
 import os
+import string
+
 import numpy as np
 
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -76,6 +82,55 @@ def _legacy_resps_row_to_choice_index(resps_row):
     return -np.inf
 
 
+def _doc_to_choice_mmlu_pro_leaderboard(doc):
+    """
+    Same strings as lm_eval.tasks.leaderboard.mmlu_pro.utils.doc_to_choice (used for completion_len).
+    """
+    if not isinstance(doc, dict) or "options" not in doc:
+        return None
+    n = len(doc["options"])
+    if n <= 0 or n > len(string.ascii_uppercase):
+        return None
+    return [string.ascii_uppercase[i] for i in range(n)]
+
+
+def _resps_row_to_mc_pred_norm_index(resps_row, doc):
+    """
+    Replicate lm_eval.api.task.ConfigurableTask.process_results (OUTPUT_TYPE multiple_choice):
+        choices = doc_to_choice(doc)
+        completion_len = np.array([float(len(i)) for i in choices])
+        pred_norm = np.argmax(lls / completion_len)
+    """
+    if resps_row is None:
+        return -np.inf
+    choices = _doc_to_choice_mmlu_pro_leaderboard(doc)
+    if choices is None:
+        return _resps_row_to_argmax_choice_index(resps_row)
+    if not isinstance(resps_row, (list, tuple)) or len(resps_row) == 0:
+        return _legacy_resps_row_to_choice_index(resps_row)
+
+    logprobs = [_parse_logprob_from_choice_cell(c) for c in resps_row]
+    m = min(len(choices), len(logprobs))
+    if m == 0:
+        return -np.inf
+    choices = choices[:m]
+    logprobs = logprobs[:m]
+
+    lls = np.asarray(logprobs, dtype=np.float64)
+    finite = np.isfinite(lls) & ~np.isnan(lls)
+    if not np.any(finite):
+        return _legacy_resps_row_to_choice_index(resps_row)
+    lls = np.where(finite, lls, -np.inf)
+
+    completion_len = np.array(
+        [float(len(c)) for c in choices], dtype=np.float64
+    )
+    # lm-eval divides as-is; avoid div-by-zero if a choice were ""
+    completion_len = np.maximum(completion_len, 1.0)
+    normed = lls / completion_len
+    return float(int(np.argmax(normed)))
+
+
 def _resps_row_to_argmax_choice_index(resps_row):
     """
     One row = one question: either a list of K choice cells (logprob + greedy flag),
@@ -108,19 +163,23 @@ def _pick_resps_record(rec):
     return rec.get("resps")
 
 
-def _resps_to_prediction_indices(resps, n_questions, max_answers=1):
+def _resps_to_prediction_indices(resps, n_questions, max_answers=1, docs=None):
     """
-    Per-question predicted choice index (same order as dataset options: A=0, B=1, ...).
-
-    Leaderboard v2 MMLU-Pro rows store resps as K choice-wise logprobs; use argmax.
-    Falls back to legacy letter / scalar parsing when logprobs are absent.
+    Per-question predicted choice index matching lm-eval acc_norm when ``docs`` is set
+    (pred_norm = argmax(lls / len(choice_i))). Same index order as options: 0=A, 1=B, ...
     """
     out = np.full((n_questions, max_answers), -np.inf, dtype=np.float64)
     if resps is None or len(resps) == 0:
         return out
     n = min(n_questions, len(resps))
     for i in range(n):
-        out[i, 0] = _resps_row_to_argmax_choice_index(resps[i])
+        doc_i = None
+        if docs is not None and i < len(docs):
+            doc_i = docs[i]
+        if isinstance(doc_i, dict) and doc_i is not None:
+            out[i, 0] = _resps_row_to_mc_pred_norm_index(resps[i], doc_i)
+        else:
+            out[i, 0] = _resps_row_to_argmax_choice_index(resps[i])
     return out
 
 
@@ -197,7 +256,18 @@ def extract_source_outputs_from_v2_raw(raw_path, pad_to_size=31):
         )
 
         resps = _pick_resps_record(rec)
-        pred = _resps_to_prediction_indices(resps, n_questions, max_answers=1)
+        docs_raw = rec.get("doc")
+        docs_list = None
+        if docs_raw is not None and not isinstance(
+            docs_raw, (str, bytes, dict)
+        ):
+            try:
+                docs_list = list(docs_raw)
+            except TypeError:
+                docs_list = None
+        pred = _resps_to_prediction_indices(
+            resps, n_questions, max_answers=1, docs=docs_list
+        )
         predictions_arr[i, :, :1] = pred[:, :1]
 
     # Same format as two_stages.build_outputs_dict / source_outputs.pkl

@@ -69,14 +69,13 @@ Note: Currently we do not provide code for computing [Metabench](https://arxiv.o
 ## Download model outputs
 
 To train DISCO you will need model outputs on MMLU, Hellaswag, Winogrande and Arc datasets.
-To download the outputs (~3GB) please run the following command:
+To download the outputs (~3GB), run:
 
 ```
-export DISCO_MODEL_OUTPUTS_HF_BASE=your-org/disco-model-outputs
 python scripts/download_model_outputs.py
 ```
 
-This script will download the file `data/model_outputs.pickle`.
+This fetches the public Hub dataset [`arubique/disco-model-outputs`](https://huggingface.co/datasets/arubique/disco-model-outputs) and writes `data/model_outputs.pickle`.
 
 For more detail see [`docs/datasets.md`](docs/datasets.md).
 

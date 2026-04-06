@@ -10,9 +10,11 @@ new name) before pushing again.
 Requires: `huggingface-cli login` or HF_TOKEN in the environment.
 
 Example:
-  export DISCO_MODEL_OUTPUTS_HF_BASE=my-org/disco-model-outputs
   huggingface-cli login
   python scripts/upload_model_outputs_to_hf.py
+
+  # Fork or custom repo:
+  python scripts/upload_model_outputs_to_hf.py --hub-base my-org/disco-model-outputs
 
   # Quick test: manifest + models + hellaswag + MMLU abstract algebra (if present in pickle)
   python scripts/upload_model_outputs_to_hf.py --debug
@@ -45,8 +47,10 @@ def main() -> None:
         "--hub-base",
         type=str,
         default=None,
-        help="Full Hub dataset repo id org/name (e.g. org/disco-model-outputs). "
-        "Overrides DISCO_MODEL_OUTPUTS_HF_BASE.",
+        help=(
+            "Full Hub dataset repo id org/name (default: arubique/disco-model-outputs). "
+            "Overrides DISCO_MODEL_OUTPUTS_HF_BASE if set."
+        ),
     )
     parser.add_argument(
         "--private",
@@ -69,10 +73,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    try:
-        repo_id = get_hub_base(args.hub_base)
-    except ValueError as e:
-        raise SystemExit(str(e)) from e
+    repo_id = get_hub_base(args.hub_base)
 
     with open(args.pickle_path, "rb") as f:
         data = pickle.load(f)

@@ -5,9 +5,9 @@ Download `data/model_outputs.pickle` from the Hugging Face Hub (default) or Goog
 Hub layout is defined in `scripts/model_outputs_hf.py` (one dataset repo; splits per task).
 
 Examples:
-  export DISCO_MODEL_OUTPUTS_HF_BASE=my-org/disco-public-model-outputs
   python scripts/download_model_outputs.py
 
+  python scripts/download_model_outputs.py --hub-base my-org/disco-model-outputs
   python scripts/download_model_outputs.py --source gdrive
 """
 
@@ -75,7 +75,10 @@ def main() -> None:
         "--hub-base",
         type=str,
         default=None,
-        help="Full Hub dataset repo id org/name. Overrides DISCO_MODEL_OUTPUTS_HF_BASE.",
+        help=(
+            "Full Hub dataset repo id org/name (default: arubique/disco-model-outputs). "
+            "Overrides DISCO_MODEL_OUTPUTS_HF_BASE if set."
+        ),
     )
     parser.add_argument(
         "--token",
@@ -89,11 +92,7 @@ def main() -> None:
         download_from_gdrive(args.output_path)
         return
 
-    try:
-        hub_base = get_hub_base(args.hub_base)
-    except ValueError as e:
-        raise SystemExit(str(e)) from e
-
+    hub_base = get_hub_base(args.hub_base)
     token = args.token or os.environ.get("HF_TOKEN")
     download_from_hf(args.output_path, hub_base, token)
 

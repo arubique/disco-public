@@ -36,7 +36,9 @@ To confirm the Hub copy matches a reference `model_outputs.pickle` (for example 
 
 ```
 pip install pytest
-export DISCO_MODEL_OUTPUTS_HF_BASE=your-org/disco-model-outputs
-export DISCO_MODEL_OUTPUTS_COMPARE_GDRIVE_PICKLE=/path/to/model_outputs.pickle
+export DISCO_MODEL_OUTPUTS_HF_BASE=arubique/disco-model-outputs
+export DISCO_MODEL_OUTPUTS_COMPARE_GDRIVE_PICKLE=data/model_outputs.pickle
 pytest tests/test_model_outputs_hf.py -m integration
 ```
+
+Paths in `DISCO_MODEL_OUTPUTS_COMPARE_GDRIVE_PICKLE` may be relative to the **repository root** (not only the shell cwd). If the basename is `model-outputs.pickle` but the file on disk is `model_outputs.pickle`, the test tries both. If pytest reports `s` (skipped), run `pytest … -rs` to print the skip reason. If the Hub was uploaded with `--debug`, set `DEBUG=1` so the test slices the reference pickle to the same tasks before comparing.

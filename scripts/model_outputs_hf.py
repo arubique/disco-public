@@ -57,6 +57,17 @@ DEBUG_UPLOAD_DATA_KEYS: Tuple[str, ...] = (
 )
 
 
+def slice_model_outputs_to_debug_keys(data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Keep full ``models`` and only task blocks listed in `DEBUG_UPLOAD_DATA_KEYS` that exist.
+    Use when comparing a full reference pickle to a Hub dataset uploaded with ``--debug``.
+    """
+    inner = {
+        k: data["data"][k] for k in DEBUG_UPLOAD_DATA_KEYS if k in data["data"]
+    }
+    return {"models": data["models"], "data": inner}
+
+
 def _require_pandas() -> Any:
     if pd is None:
         raise ImportError(
@@ -65,16 +76,17 @@ def _require_pandas() -> Any:
     return pd
 
 
+DEFAULT_MODEL_OUTPUTS_HF_REPO = "arubique/disco-model-outputs"
+
+
 def get_hub_base(cli_value: Optional[str]) -> str:
+    """Resolve Hub dataset repo id: CLI ``--hub-base``, then ``DISCO_MODEL_OUTPUTS_HF_BASE``, then default."""
     if cli_value:
         return cli_value
     v = os.environ.get("DISCO_MODEL_OUTPUTS_HF_BASE")
-    if not v:
-        raise ValueError(
-            "Set environment variable DISCO_MODEL_OUTPUTS_HF_BASE or pass --hub-base "
-            "to the full dataset repo id (e.g. my-org/disco-model-outputs)."
-        )
-    return v
+    if v:
+        return v
+    return DEFAULT_MODEL_OUTPUTS_HF_REPO
 
 
 def data_key_to_shard_name(data_key: str) -> str:

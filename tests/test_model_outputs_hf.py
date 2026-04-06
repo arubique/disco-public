@@ -17,6 +17,7 @@ SCRIPTS = ROOT / "scripts"
 sys.path.insert(0, str(SCRIPTS))
 
 from model_outputs_hf import (  # noqa: E402
+    DEFAULT_MODEL_OUTPUTS_HF_REPO,
     MANIFEST_FORMAT_VERSION_HUB_TABULAR,
     _merge_model_outputs_readme,
     assert_model_outputs_equal,
@@ -24,9 +25,11 @@ from model_outputs_hf import (  # noqa: E402
     build_hub_split_layout,
     build_model_outputs_dataset_dict,
     download_model_outputs_from_hub,
+    get_hub_base,
     iter_shard_names,
     merge_shards_to_model_outputs,
     reassemble_model_outputs_from_tabular_splits,
+    slice_model_outputs_to_debug_keys,
     split_model_outputs_to_shards,
 )
 
@@ -45,6 +48,12 @@ def _minimal_model_outputs() -> dict:
             },
         },
     }
+
+
+def test_get_hub_base_default_without_env(monkeypatch):
+    monkeypatch.delenv("DISCO_MODEL_OUTPUTS_HF_BASE", raising=False)
+    assert get_hub_base(None) == DEFAULT_MODEL_OUTPUTS_HF_REPO
+    assert get_hub_base("other/repo") == "other/repo"
 
 
 def test_iter_shard_names_order():
@@ -172,6 +181,21 @@ auto-generated
     assert "Curated body." in out
 
 
+def test_slice_model_outputs_to_debug_keys():
+    data = _minimal_model_outputs()
+    data["data"]["harness_hendrycksTest_abstract_algebra_5"] = {
+        "correctness": np.array([[1.0, 0.0]], dtype=np.float64),
+        "predictions": np.zeros((1, 2, 5), dtype=np.float64),
+    }
+    sub = slice_model_outputs_to_debug_keys(data)
+    assert sub["models"] == data["models"]
+    assert set(sub["data"].keys()) == {
+        "harness_hellaswag_10",
+        "harness_hendrycksTest_abstract_algebra_5",
+    }
+    assert "harness_arc_challenge_25" not in sub["data"]
+
+
 def test_debug_datasetdict_includes_mmlu_abstract_algebra_when_present():
     data = _minimal_model_outputs()
     data["data"]["harness_hendrycksTest_abstract_algebra_5"] = {
@@ -189,31 +213,79 @@ def test_debug_datasetdict_includes_mmlu_abstract_algebra_when_present():
     }
 
 
+def _resolve_reference_pickle_path(raw: str) -> Path:
+    p = Path(raw).expanduser()
+    if not p.is_absolute():
+        p = ROOT / p
+    return p.resolve()
+
+
+def _reference_pickle_search_paths(raw: str) -> list[Path]:
+    """
+    Resolve env path from repo root, then common typo: model-outputs vs model_outputs basename.
+    """
+    primary = _resolve_reference_pickle_path(raw)
+    candidates = [primary]
+    stem = primary.stem
+    if stem in ("model-outputs", "model_outputs"):
+        alt_stem = (
+            "model_outputs" if stem == "model-outputs" else "model-outputs"
+        )
+        candidates.append(primary.with_name(alt_stem + primary.suffix))
+    seen: set[Path] = set()
+    ordered: list[Path] = []
+    for p in candidates:
+        rp = p.resolve()
+        if rp not in seen:
+            seen.add(rp)
+            ordered.append(rp)
+    return ordered
+
+
 @pytest.mark.integration
 def test_hf_hub_matches_reference_gdrive_pickle():
     """
-    Compare a reference pickle (obtained from Google Drive via gdown or any mirror)
-    to the object reassembled from the Hugging Face Hub.
+    Compare a reference pickle (e.g. from Google Drive) to data reassembled from the Hub.
 
     Set:
-      DISCO_MODEL_OUTPUTS_HF_BASE=org/disco-model-outputs
-      DISCO_MODEL_OUTPUTS_COMPARE_GDRIVE_PICKLE=/path/to/model_outputs.pickle
+      DISCO_MODEL_OUTPUTS_COMPARE_GDRIVE_PICKLE=path/to/model_outputs.pickle
+        (relative paths are resolved from the repository root, not only cwd)
+      DISCO_MODEL_OUTPUTS_HF_BASE=org/disco-model-outputs  (optional if default in get_hub_base)
+
+    Set DEBUG=1 to compare only tasks uploaded with ``--debug`` (hellaswag + mmlu abstract
+    algebra when present); the Hub dataset must have been pushed with ``--debug``.
 
     Optional: HF_TOKEN if the datasets are private.
     """
-    ref_path = os.environ.get("DISCO_MODEL_OUTPUTS_COMPARE_GDRIVE_PICKLE")
-    hf_repo = os.environ.get("DISCO_MODEL_OUTPUTS_HF_BASE")
-    if not ref_path or not hf_repo:
+    raw_ref = os.environ.get("DISCO_MODEL_OUTPUTS_COMPARE_GDRIVE_PICKLE")
+    if not raw_ref:
         pytest.skip(
-            "Set DISCO_MODEL_OUTPUTS_COMPARE_GDRIVE_PICKLE and DISCO_MODEL_OUTPUTS_HF_BASE "
-            "to run Hub vs Google Drive pickle comparison."
+            "Set DISCO_MODEL_OUTPUTS_COMPARE_GDRIVE_PICKLE to run this integration test."
         )
-    if not os.path.isfile(ref_path):
-        pytest.skip(f"Reference pickle not found: {ref_path}")
 
-    with open(ref_path, "rb") as handle:
+    tried = _reference_pickle_search_paths(raw_ref)
+    ref_path = next((p for p in tried if p.is_file()), None)
+    if ref_path is None:
+        pytest.skip(
+            "Reference pickle not found. Tried:\n  "
+            + "\n  ".join(str(p) for p in tried)
+            + f"\n(DISCO_MODEL_OUTPUTS_COMPARE_GDRIVE_PICKLE={raw_ref!r}, repo root={ROOT}). "
+            "Typo: use model_outputs.pickle (underscore) not model-outputs.pickle. "
+            "Re-run with pytest -rs to show this skip reason."
+        )
+
+    try:
+        hf_repo = get_hub_base(os.environ.get("DISCO_MODEL_OUTPUTS_HF_BASE"))
+    except ValueError as e:
+        pytest.skip(str(e))
+
+    with ref_path.open("rb") as handle:
         reference = pickle.load(handle)
 
     token = os.environ.get("HF_TOKEN")
     from_hub = download_model_outputs_from_hub(hf_repo, token=token)
+
+    if os.environ.get("DEBUG", "").strip() == "1":
+        reference = slice_model_outputs_to_debug_keys(reference)
+
     assert_model_outputs_equal(reference, from_hub)

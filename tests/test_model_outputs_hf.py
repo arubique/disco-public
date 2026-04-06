@@ -97,13 +97,36 @@ def test_datasetdict_reassemble_roundtrip_local():
     assert_model_outputs_equal(data, out)
 
 
-def test_debug_datasetdict_has_two_splits_only():
+def test_debug_datasetdict_only_hellaswag_when_mmlu_absent():
     data = _minimal_model_outputs()
     dd = build_model_outputs_dataset_dict(data, debug=True)
-    assert set(dd.keys()) == {"manifest", "models"}
+    assert set(dd.keys()) == {"manifest", "models", "hellaswag"}
+    assert "arc_challenge" not in dd
     out = reassemble_model_outputs_from_tabular_splits(dict(dd))
     assert out["models"] == data["models"]
-    assert out["data"] == {}
+    assert set(out["data"].keys()) == {"harness_hellaswag_10"}
+    partial = {
+        "models": data["models"],
+        "data": {"harness_hellaswag_10": data["data"]["harness_hellaswag_10"]},
+    }
+    assert_model_outputs_equal(partial, out)
+
+
+def test_debug_datasetdict_includes_mmlu_abstract_algebra_when_present():
+    data = _minimal_model_outputs()
+    data["data"]["harness_hendrycksTest_abstract_algebra_5"] = {
+        "correctness": np.array([[1.0, 0.0]], dtype=np.float64),
+        "predictions": np.zeros((1, 2, 5), dtype=np.float64),
+    }
+    dd = build_model_outputs_dataset_dict(data, debug=True)
+    assert "hellaswag" in dd
+    assert "mmlu_abstract_algebra" in dd
+    assert "arc_challenge" not in dd
+    out = reassemble_model_outputs_from_tabular_splits(dict(dd))
+    assert set(out["data"].keys()) == {
+        "harness_hellaswag_10",
+        "harness_hendrycksTest_abstract_algebra_5",
+    }
 
 
 @pytest.mark.integration

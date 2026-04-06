@@ -14,7 +14,7 @@ Example:
   huggingface-cli login
   python scripts/upload_model_outputs_to_hf.py
 
-  # Quick test: only manifest + models splits (no benchmark data on the Hub)
+  # Quick test: manifest + models + hellaswag + MMLU abstract algebra (if present in pickle)
   python scripts/upload_model_outputs_to_hf.py --debug
 """
 
@@ -62,7 +62,10 @@ def main() -> None:
     parser.add_argument(
         "--debug",
         action="store_true",
-        help="Upload only two splits (manifest + models); omit all benchmark splits",
+        help=(
+            "Upload manifest + models + only harness_hellaswag_10 and "
+            "harness_hendrycksTest_abstract_algebra_5 (if present); omit other tasks"
+        ),
     )
     args = parser.parse_args()
 
@@ -77,7 +80,8 @@ def main() -> None:
     token = args.token or os.environ.get("HF_TOKEN")
     if args.debug:
         print(
-            f"Pushing debug dataset (manifest + models only) to {repo_id} ..."
+            f"Pushing debug dataset (manifest + models + hellaswag + mmlu abstract algebra "
+            f"if present) to {repo_id} ..."
         )
     else:
         print(f"Pushing single dataset to {repo_id} ...")

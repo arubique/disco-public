@@ -2,8 +2,11 @@
 Hugging Face Hub layout for `model_outputs.pickle` as a *single* dataset repository.
 
 Splits (manifest, models, hellaswag, mmlu_*, …) are stored as **pandas-friendly tables**
-so the Hub dataset viewer shows real columns. Task splits use long format:
-`sample_idx`, `model_idx`, `correctness`, `predictions` (list of floats).
+so the Hub dataset viewer shows real columns. Task subsets use long format: one row per
+(sample, model) with `sample_idx`, `model_idx`, `correctness`, and one float column per
+answer choice (`logit_0` … `logit_{K-1}`) so scores appear as normal table columns (the
+viewer does not list nested sequences well). Legacy Hub files may still use a `predictions`
+list column; download supports both.
 
 Each block is pushed as its own Hub **configuration** (`push_to_hub(repo_id, config_name, split="train")`)
 so schemas may differ; the viewer subset dropdown lists config names (`manifest`, `models`, `hellaswag`, …).
@@ -17,7 +20,7 @@ import json
 import os
 import pickle
 import re
-from typing import Any, Dict, List, Optional, Set, Union
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 import numpy as np
 
@@ -41,6 +44,12 @@ MANIFEST_FORMAT_VERSION_HUB_TABULAR = 3
 MANIFEST_FORMAT_VERSION_LOCAL = 1
 
 RESERVED_SPLIT_NAMES: Set[str] = {MANIFEST_SPLIT, MODELS_SPLIT}
+
+# With --debug upload: only these harness keys (if present in the pickle) plus manifest/models.
+DEBUG_UPLOAD_DATA_KEYS: Tuple[str, ...] = (
+    "harness_hellaswag_10",
+    "harness_hendrycksTest_abstract_algebra_5",
+)
 
 
 def _require_pandas() -> Any:
@@ -179,6 +188,17 @@ def build_hub_split_layout(
     used: Set[str] = set(RESERVED_SPLIT_NAMES)
     data_splits: Dict[str, str] = {}
     if debug:
+        for dk in DEBUG_UPLOAD_DATA_KEYS:
+            if dk not in data["data"]:
+                continue
+            base = default_split_name_for_data_key(dk)
+            sn = base
+            n = 2
+            while sn in used:
+                sn = _sanitize_split_name(f"{base}__{n}")
+                n += 1
+            used.add(sn)
+            data_splits[sn] = dk
         return {
             "format_version": MANIFEST_FORMAT_VERSION_HUB_TABULAR,
             "model_split": MODELS_SPLIT,
@@ -222,15 +242,33 @@ def _task_block_to_dataframe(block: Dict[str, Any]) -> Any:
     model_idx = np.tile(np.arange(M, dtype=np.int64), S)
     correctness = c.reshape(-1, order="C")
     pred_flat = p.reshape(S * M, A)
-    predictions = [pred_flat[i].tolist() for i in range(S * M)]
-    return pd.DataFrame(
-        {
-            "sample_idx": sample_idx,
-            "model_idx": model_idx,
-            "correctness": correctness,
-            "predictions": predictions,
-        }
-    )
+    col_data: Dict[str, Any] = {
+        "sample_idx": sample_idx,
+        "model_idx": model_idx,
+        "correctness": correctness.astype(np.float64),
+    }
+    for j in range(A):
+        col_data[f"logit_{j}"] = pred_flat[:, j].astype(np.float64)
+    return pd.DataFrame(col_data)
+
+
+def _logit_column_names(df: Any) -> List[str]:
+    names = [c for c in df.columns if c.startswith("logit_")]
+    names.sort(key=lambda x: int(x.split("_", 1)[1]))
+    return names
+
+
+def _task_features_for_num_choices(num_choices: int) -> Any:
+    from datasets import Features, Value
+
+    fields: Dict[str, Any] = {
+        "sample_idx": Value("int64"),
+        "model_idx": Value("int64"),
+        "correctness": Value("float64"),
+    }
+    for j in range(num_choices):
+        fields[f"logit_{j}"] = Value("float64")
+    return Features(fields)
 
 
 def _dataframe_to_task_block(df: Any) -> Dict[str, np.ndarray]:
@@ -240,16 +278,30 @@ def _dataframe_to_task_block(df: Any) -> Dict[str, np.ndarray]:
     ).reset_index(drop=True)
     S = int(df["sample_idx"].max()) + 1
     M = int(df["model_idx"].max()) + 1
-    first = df["predictions"].iloc[0]
-    if isinstance(first, np.ndarray):
-        A = int(first.shape[0])
-    else:
-        A = len(first)
-    pred_stack = np.stack(
-        [np.asarray(x, dtype=np.float64) for x in df["predictions"].values]
+    correctness = df["correctness"].values.reshape(S, M, order="C")
+
+    if "predictions" in df.columns:
+        first = df["predictions"].iloc[0]
+        if isinstance(first, np.ndarray):
+            A = int(first.shape[0])
+        else:
+            A = len(first)
+        pred_stack = np.stack(
+            [np.asarray(x, dtype=np.float64) for x in df["predictions"].values]
+        )
+        predictions = pred_stack.reshape(S, M, A)
+        return {"correctness": correctness, "predictions": predictions}
+
+    logit_cols = _logit_column_names(df)
+    if not logit_cols:
+        raise ValueError(
+            "Task table has no logit_* columns and no predictions column; cannot rebuild arrays."
+        )
+    A = len(logit_cols)
+    pred_stack = np.column_stack(
+        [df[c].astype(np.float64).values for c in logit_cols]
     )
     predictions = pred_stack.reshape(S, M, A)
-    correctness = df["correctness"].values.reshape(S, M, order="C")
     return {"correctness": correctness, "predictions": predictions}
 
 
@@ -277,8 +329,8 @@ def _build_manifest_dataframe(layout: Dict[str, Any]) -> Any:
     return pd.DataFrame(rows)
 
 
-def _tabular_dataset_features():
-    from datasets import Features, Sequence, Value
+def _tabular_manifest_and_models_features():
+    from datasets import Features, Value
 
     manifest_features = Features(
         {
@@ -294,15 +346,7 @@ def _tabular_dataset_features():
             "model_name": Value("string"),
         }
     )
-    task_features = Features(
-        {
-            "sample_idx": Value("int64"),
-            "model_idx": Value("int64"),
-            "correctness": Value("float64"),
-            "predictions": Sequence(Value("float64")),
-        }
-    )
-    return manifest_features, models_features, task_features
+    return manifest_features, models_features
 
 
 def build_tabular_hub_splits(
@@ -314,7 +358,7 @@ def build_tabular_hub_splits(
     from datasets import Dataset
 
     layout = build_hub_split_layout(data, debug=debug)
-    mf, mof, tf = _tabular_dataset_features()
+    mf, mof = _tabular_manifest_and_models_features()
     pd = _require_pandas()
 
     out: Dict[str, Any] = {}
@@ -336,6 +380,12 @@ def build_tabular_hub_splits(
 
     for sn, dk in sorted(layout["data_splits"].items()):
         tdf = _task_block_to_dataframe(data["data"][dk])
+        A = int(
+            np.asarray(data["data"][dk]["predictions"], dtype=np.float64).shape[
+                2
+            ]
+        )
+        tf = _task_features_for_num_choices(A)
         out[sn] = Dataset.from_pandas(tdf, preserve_index=False, features=tf)
 
     return out

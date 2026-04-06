@@ -587,7 +587,9 @@ def _is_tabular_manifest_dataset(manifest_ds: Any) -> bool:
 
 
 def reassemble_model_outputs_from_tabular_splits(
-    splits: Dict[str, Any]
+    splits: Dict[str, Any],
+    *,
+    show_progress: bool = False,
 ) -> Dict[str, Any]:
     """Rebuild from split name -> Dataset (in-memory or loaded one split at a time)."""
     pd = _require_pandas()
@@ -604,12 +606,29 @@ def reassemble_model_outputs_from_tabular_splits(
     mdf = models_ds.to_pandas().sort_values("model_idx", kind="mergesort")
     models = mdf["model_name"].tolist()
 
-    inner: Dict[str, Any] = {}
+    task_rows: List[Any] = []
     for _, row in mf.iterrows():
         sn = str(row["task_split_name"])
         dk = str(row["original_data_key"])
         if not sn or not dk:
             continue
+        task_rows.append(row)
+
+    inner: Dict[str, Any] = {}
+    if show_progress:
+        from tqdm import tqdm
+
+        row_iter = tqdm(
+            task_rows,
+            desc="Parquet → arrays (tasks)",
+            unit="task",
+        )
+    else:
+        row_iter = task_rows
+
+    for row in row_iter:
+        sn = str(row["task_split_name"])
+        dk = str(row["original_data_key"])
         full_dim: Optional[int] = None
         if "prediction_width" in row.index:
             pw = row["prediction_width"]
@@ -655,29 +674,62 @@ def _download_tabular_from_hub(
     manifest_ds: Any,
     *,
     token: Optional[str] = None,
+    show_progress: bool = False,
 ) -> Dict[str, Any]:
     mf = manifest_ds.to_pandas()
     splits_map: Dict[str, Any] = {MANIFEST_SPLIT: manifest_ds}
     model_split_name = str(mf["model_split_name"].iloc[0])
-    splits_map[model_split_name] = _load_hub_config_train(
-        repo_id, model_split_name, token=token
-    )
+
+    to_load: List[Tuple[str, str]] = []
+    seen = {MANIFEST_SPLIT}
+    if model_split_name not in seen:
+        to_load.append((model_split_name, model_split_name))
+        seen.add(model_split_name)
     for _, row in mf.iterrows():
         sn = str(row["task_split_name"])
         dk = str(row["original_data_key"])
         if not sn or not dk:
             continue
-        if sn not in splits_map:
-            splits_map[sn] = _load_hub_config_train(repo_id, sn, token=token)
-    return reassemble_model_outputs_from_tabular_splits(splits_map)
+        if sn not in seen:
+            to_load.append((sn, dk))
+            seen.add(sn)
+
+    pbar = None
+    if show_progress:
+        from tqdm import tqdm
+
+        pbar = tqdm(to_load, desc="Downloading Hub configs", unit="config")
+    iterator = pbar if pbar is not None else to_load
+
+    for config_name, data_key in iterator:
+        if pbar is not None:
+            pbar.set_postfix(
+                config=config_name, ref=data_key[:48], refresh=True
+            )
+        splits_map[config_name] = _load_hub_config_train(
+            repo_id, config_name, token=token
+        )
+
+    return reassemble_model_outputs_from_tabular_splits(
+        splits_map, show_progress=show_progress
+    )
 
 
 def download_model_outputs_from_hub(
     repo_id: str,
     *,
     token: Optional[str] = None,
+    show_progress: bool = False,
 ) -> Dict[str, Any]:
     from datasets import load_dataset
+
+    if show_progress:
+        from tqdm import tqdm
+
+        tqdm.write(f"Loading Hub config {MANIFEST_SPLIT!r}…")
+        _tqdm_write = tqdm.write
+    else:
+        _tqdm_write = None
 
     manifest_ds = None
     try:
@@ -688,7 +740,18 @@ def download_model_outputs_from_hub(
         pass
 
     if manifest_ds is not None and _is_tabular_manifest_dataset(manifest_ds):
-        return _download_tabular_from_hub(repo_id, manifest_ds, token=token)
+        return _download_tabular_from_hub(
+            repo_id,
+            manifest_ds,
+            token=token,
+            show_progress=show_progress,
+        )
 
+    if _tqdm_write:
+        _tqdm_write(
+            "Loading full dataset from Hub (legacy layout; can take several minutes)…"
+        )
     dsd = load_dataset(repo_id, token=token)
+    if _tqdm_write:
+        _tqdm_write("Reassembling legacy pickle layout…")
     return reassemble_model_outputs_from_dataset_dict(dsd)

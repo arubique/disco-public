@@ -31,6 +31,11 @@ Note: All commands are supposed to be run from the root of this repository and a
 - [Notes on `stnd.run_from_csv.py` and `.csv` files](#note-about-stndrun_from_csvpy-and-csv-files)
 - [Citation](#citation)
 
+## Evaluate your model 100x faster
+
+You can use our DISCO-extension to the [MASEval](https://maseval.readthedocs.io/en/stable/) library to evaluate your model on MMLU. Example command can be found [here](https://github.com/parameterlab/MASEval/tree/main/examples/mmlu_benchmark).
+
+Note: This workflow uses the [`arubique/DISCO-MMLU`](https://huggingface.co/arubique/DISCO-MMLU) model and the [`arubique/flattened-MMLU`](https://huggingface.co/datasets/arubique/flattened-MMLU) dataset from the Hugging Face Hub. The dataset is not the MMLU release as originally published: all questions are concatenated in a fixed order in one flat table, without separate splits per subject (subscenario).
 
 ## Evaluate your model 100x faster
 
@@ -69,7 +74,7 @@ Note: Currently we do not provide code for computing [Metabench](https://arxiv.o
 ## Download model outputs
 
 To train DISCO you will need model outputs on MMLU, Hellaswag, Winogrande and Arc datasets.
-To download the outputs (~3GB), run:
+To download the outputs (~300MB), run:
 
 ```
 python scripts/download_model_outputs.py

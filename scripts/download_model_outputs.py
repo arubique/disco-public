@@ -45,13 +45,23 @@ def download_from_gdrive(output_path: str) -> None:
 
 
 def download_from_hf(
-    output_path: str, hub_base: str, token: Optional[str]
+    output_path: str,
+    hub_base: str,
+    token: Optional[str],
+    *,
+    show_progress: bool = True,
 ) -> None:
     print(
         f"Downloading model outputs from Hugging Face Hub (base={hub_base!r})..."
     )
-    data = download_model_outputs_from_hub(hub_base, token=token)
+    data = download_model_outputs_from_hub(
+        hub_base, token=token, show_progress=show_progress
+    )
     os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
+    if show_progress:
+        from tqdm import tqdm
+
+        tqdm.write(f"Writing pickle to {output_path!r}…")
     with open(output_path, "wb") as handle:
         pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
     print(f"Wrote {output_path}")
@@ -86,6 +96,11 @@ def main() -> None:
         default=None,
         help="Hugging Face token (default: HF_TOKEN env or cached login)",
     )
+    parser.add_argument(
+        "--no-progress",
+        action="store_true",
+        help="Disable tqdm progress for Hub download and parquet reassembly",
+    )
     args = parser.parse_args()
 
     if args.source == "gdrive":
@@ -94,7 +109,12 @@ def main() -> None:
 
     hub_base = get_hub_base(args.hub_base)
     token = args.token or os.environ.get("HF_TOKEN")
-    download_from_hf(args.output_path, hub_base, token)
+    download_from_hf(
+        args.output_path,
+        hub_base,
+        token,
+        show_progress=not args.no_progress,
+    )
 
 
 if __name__ == "__main__":

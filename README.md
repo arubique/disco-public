@@ -72,10 +72,13 @@ To train DISCO you will need model outputs on MMLU, Hellaswag, Winogrande and Ar
 To download the outputs (~3GB) please run the following command:
 
 ```
+export DISCO_MODEL_OUTPUTS_HF_BASE=your-org/disco-model-outputs
 python scripts/download_model_outputs.py
 ```
 
 This script will download the file `data/model_outputs.pickle`.
+
+For more detail see [`docs/datasets.md`](docs/datasets.md).
 
 ### (Optional) Extract model outputs from open-llm-leaderboard data
 

@@ -18,6 +18,7 @@ sys.path.insert(0, str(SCRIPTS))
 
 from model_outputs_hf import (  # noqa: E402
     MANIFEST_FORMAT_VERSION_HUB_TABULAR,
+    _merge_model_outputs_readme,
     assert_model_outputs_equal,
     build_manifest,
     build_hub_split_layout,
@@ -88,6 +89,29 @@ def test_hub_split_layout_unique_and_reserved():
     assert "manifest" not in names
     assert "models" not in names
     assert len(names) == len(layout["data_splits"])
+    assert layout["prediction_widths"]["arc_challenge"] == 5
+    assert layout["prediction_widths"]["hellaswag"] == 10
+
+
+def test_trailing_padding_logits_omitted_on_hub_and_restored_on_download():
+    p = np.ones((1, 2, 10), dtype=np.float64)
+    p[:, :, 5:] = float("-inf")
+    data = {
+        "models": ["m1", "m2"],
+        "data": {
+            "harness_hellaswag_10": {
+                "correctness": np.array([[0.5, 1.0]], dtype=np.float64),
+                "predictions": p,
+            }
+        },
+    }
+    dd = build_model_outputs_dataset_dict(data)
+    logit_cols = [
+        c for c in dd["hellaswag"].to_pandas().columns if c.startswith("logit_")
+    ]
+    assert len(logit_cols) == 5
+    out = reassemble_model_outputs_from_tabular_splits(dict(dd))
+    assert_model_outputs_equal(data, out)
 
 
 def test_datasetdict_reassemble_roundtrip_local():
@@ -110,6 +134,42 @@ def test_debug_datasetdict_only_hellaswag_when_mmlu_absent():
         "data": {"harness_hellaswag_10": data["data"]["harness_hellaswag_10"]},
     }
     assert_model_outputs_equal(partial, out)
+
+
+def test_merge_readme_keeps_hub_configs_and_static_body():
+    """Curated README must not replace datasets-generated ``configs`` (Hub viewer)."""
+    static = """---
+license: other
+tags:
+  - disco
+pretty_name: DISCO Model Outputs
+---
+
+# Curated title
+
+Curated body.
+"""
+    hub = """---
+configs:
+  - config_name: manifest
+    data_files:
+      - split: train
+        path: manifest/train-*
+  - config_name: hellaswag
+    data_files:
+      - split: train
+        path: hellaswag/train-*
+---
+
+auto-generated
+"""
+    out = _merge_model_outputs_readme(static, hub)
+    assert "configs:" in out
+    assert "hellaswag" in out
+    assert "manifest/train-*" in out
+    assert "disco" in out
+    assert "# Curated title" in out
+    assert "Curated body." in out
 
 
 def test_debug_datasetdict_includes_mmlu_abstract_algebra_when_present():
